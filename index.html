@@ -1,0 +1,1452 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#123d59">
+<meta name="description" content="Sistema offline de inspeção de defensas Copabo Infra">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Defensas Copabo">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Inspeção de Defensas | Copabo Infra</title>
+<style>
+:root{--navy:#123d59;--blue:#0879a8;--bg:#f2f5f7;--card:#fff;--ink:#172b38;--muted:#647582;--line:#d8e0e5;--green:#167346;--amber:#a76500;--red:#b42318}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Arial,sans-serif}
+#app{max-width:850px;margin:auto;padding:16px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--navy);color:white;padding:15px;border-radius:14px;margin-bottom:16px}
+.brand{font-weight:800;letter-spacing:.3px}
+.sub{font-size:12px;opacity:.8}
+h1{font-size:23px;margin:12px 0 4px}
+h2{font-size:18px;margin:8px 0}
+.muted{color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.btn{border:0;border-radius:9px;background:var(--blue);color:white;padding:11px 15px;font:600 14px system-ui;cursor:pointer}
+.btn.secondary{background:white;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:#fff1f0;color:var(--red);border:1px solid #f2c4c0}
+.btn.full{width:100%}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;background:white;border:1px solid var(--line);border-radius:11px;padding:13px;margin:8px 0;cursor:pointer}
+.item small{display:block;color:var(--muted)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink);font:inherit}
+textarea{min-height:75px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.photo{border:1px dashed #9aabb7;border-radius:10px;padding:8px;background:white}
+.photo img{width:100%;height:150px;object-fit:contain;background:#eef2f4;border-radius:6px}
+.photo button{margin-top:6px}
+.pill{border-radius:30px;padding:4px 9px;font-size:12px;border:1px solid var(--line);white-space:nowrap}
+.ok{color:var(--green);border-color:#80b99c}
+.bad{color:var(--red);border-color:#e6a29d}
+.warn{color:var(--amber);border-color:#e7c17e}
+.row{border-top:1px solid var(--line);padding:10px 0}
+.topline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hidden{display:none!important}
+.foot{text-align:center;color:var(--muted);font-size:11px;padding:20px}
+.status{padding:9px;background:#e8f2f7;border-radius:8px;color:#17435b;font-size:13px}
+.setting-img{max-width:180px;max-height:80px;object-fit:contain;display:block;margin:8px 0}
+.component{border-top:1px solid var(--line);padding:12px 0;font-size:13px}
+.component .comp-head{display:grid;grid-template-columns:1fr 112px 130px;gap:8px;align-items:center}
+.component input.qty{padding:9px 4px;text-align:center}
+.component textarea.bg-y{background:#fff3a8}.component textarea.bg-r{background:#ffc9c9}.component textarea.bg-g{background:#c8f0d0}
+.sw-row{display:flex;gap:10px;align-items:center;margin-top:6px;font-size:12px;color:var(--muted)}
+.sw{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer}
+.sw.on{border-color:var(--navy);box-shadow:0 0 0 2px #fff,0 0 0 4px var(--navy)}
+.sw.c0{background:#fff}.sw.cy{background:#fff3a8}.sw.cr{background:#ffc9c9}.sw.cg{background:#c8f0d0}
+.component textarea{min-height:52px;margin-top:6px;font-size:13px}
+@media(max-width:520px){#app{padding:10px}.grid{gap:7px}.head{padding:12px}.component .comp-head{grid-template-columns:1fr 1.4fr}.component .comp-head>span{grid-column:1/-1}}
+.item.dragging{opacity:.95;border-color:var(--blue);background:#f7fbfe;z-index:50}
+.item .handle{cursor:grab;color:var(--muted);font-size:22px;line-height:1;padding:10px 12px 10px 4px;user-select:none;touch-action:none;-webkit-user-select:none}
+.item .handle:active{cursor:grabbing;color:var(--blue)}
+.item{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+body.reordering{overflow:hidden;touch-action:none}
+#items.reordering{touch-action:none}
+#items.reordering .item{touch-action:none}
+
+.component textarea.bg-b{background:#cfe6ff}
+.obs{display:grid;grid-template-columns:1fr 40px;gap:6px;align-items:start;margin-top:6px}
+.component .obs textarea{margin-top:0}
+.pal-btn{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:#fff;padding:0;font-size:18px;line-height:1;cursor:pointer}
+#pal{position:fixed;z-index:900;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px;display:flex;gap:9px;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+#pal button{width:34px;height:34px;border-radius:50%;border:2px solid #9aabb7;padding:0;cursor:pointer}
+#pal button.on{border-color:var(--navy);box-shadow:0 0 0 2px #fff,0 0 0 4px var(--navy)}
+#cam,#ed{position:fixed;inset:0;background:#000;z-index:1000;display:flex;flex-direction:column;color:#fff;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
+#cam video{flex:1;min-height:0;width:100%;object-fit:contain;background:#000}
+.cam-info{position:absolute;left:10px;bottom:112px;max-width:82%;background:rgba(0,0,0,.45);padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.35;pointer-events:none}
+.cam-info .t{display:block;font-size:30px;font-weight:800;line-height:1.1}
+.cam-bar,.ed-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:#000}
+#camShot{width:70px;height:70px;border-radius:50%;border:5px solid #fff;background:#e5e5e5;padding:0}
+#camShot:active{background:#bbb}
+.ed-top{padding:10px 14px;font-size:13px;background:#000}
+#ed canvas{flex:1;min-height:0;max-width:100%;object-fit:contain;touch-action:none;background:#111}
+.ed-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 12px;background:#111}
+.ed-tools button{background:#2a2f33;color:#fff;border:1px solid #444;padding:8px 11px;border-radius:8px;font:600 13px system-ui}
+.ed-tools button.on{background:var(--blue);border-color:#fff}
+.ed-tools .col{width:30px;height:30px;border-radius:50%;padding:0;border:3px solid #444}
+.ed-tools .col.on{border-color:#fff}
+@media print{
+  body{background:white;color:#111}
+  #app{max-width:none;padding:0}
+  .no-print{display:none!important}
+  .print-page{page-break-after:always;padding:8mm 9mm;min-height:275mm}
+  .print-page:last-child{page-break-after:auto}
+  .pdf-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #777;padding-bottom:8px}
+  .pdf-head img{max-width:125px;max-height:48px;object-fit:contain}
+  .pdf-title{text-align:center;font-size:14px;font-weight:bold;margin:10px 0}
+  .meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:8px 0}
+  .meta-cell{border:1px solid #999;padding:5px;font-size:10px}
+  .meta-cell b{display:block;color:#555;font-size:9px}
+  .parts{width:100%;border-collapse:collapse;font-size:9px;margin-top:8px}
+  .parts td,.parts th{border:1px solid #888;padding:4px;text-align:left}
+  .photos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .photos figure{margin:0}
+  .photos img{width:100%;height:95mm;object-fit:contain;border:1px solid #aaa}
+  .photos figcaption{font-size:9px}
+  .signature{display:flex;align-items:end;justify-content:space-between;margin-top:12px;font-size:10px}
+  .signature img{max-width:150px;max-height:55px;object-fit:contain}
+  .diagram{max-width:100%;max-height:65mm;object-fit:contain;display:block;margin:8px auto}
+  .stamp{font-size:9px;color:#333}
+}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const D=[["Alamoa - Píer de Barcaças","bc",[["PB01","Regular"],["PB02","Regular"],["PB03","Regular"],["PB04","Regular"],["PB05","Ruim"],["PB06","Regular"],["PB07","Regular"],["PB08","Regular"]]],["Alamoa - Píer 01","a1",[["12","Ruim"],["12.1","Ruim"],["13","Regular"]]],["Alamoa - Píer 02","a1",[["17","Regular"],["17.8","Ruim"],["19","Regular"]]],["Alamoa - Píer 03 e 04","a3",[["23","Regular"],["24","Bom"],["25","Regular"],["26","Regular"],["27","Bom"],["30","Bom"],["31","Regular"],["32","Ruim"],["33","Regular"],["34","Regular"]]],["Alamoa - Dolfin","dl",[["D1","Bom"],["D2","Regular"],["D3","CRÍTICA"],["D4","Regular"],["D5","Ruim"]]],["Saboó","sb",[["41","OK"],["52.2","OK"],["41.1","Com Avarias"],["53.1","OK"],["42.1","OK"],["54","Crítica"],["42.2","OK"],["54.1","OK"],["43.1","OK"],["55.1","OK"],["43.2","Crítica"],["55A.1","OK"],["44.1","OK"],["56A.1","OK"],["45.1","OK"],["57.1","OK"],["45.2","OK"],["57.2","OK"],["46.1","OK"],["58.1","Crítica"],["47","OK"],["59","Com Avarias"],["47.1","OK"],["59.1","OK"],["48.1","Crítica"],["60.1","OK"],["49","OK"],["61.1","OK"],["49A.1","OK"],["61A.1","Com Avarias"],["50.1","OK"],["62.1","OK"],["50A.1","Crítica"],["62.2","OK"],["51.1","OK"],["63.1","OK"],["52.1","OK"],["64.1","SEM DEFENSA"]]],["ARMAZÉM 12","cn",[["1","OK"],["2","OK"],["3","OK"],["4","OK"],["5","OK"],["6","OK"],["7","OK"],["8","OK"]]],["Armazéns 16 / 17 / 19","sb",[["182","S/ Defensa"],["192.1","Com Avarias"],["182A.1","Com Avarias"],["193","OK"],["183.1","OK"],["193.1","OK"],["183.2","OK"],["194.1","OK"],["184.1","OK"],["195","OK"],["185","OK"],["195.1","OK"],["185.1","OK"],["196.1","OK"],["186.1","OK"],["196.2","OK"],["186.2","OK"],["197.1","OK"],["187.1","OK"],["197.2","OK"],["188","OK"],["198.1","OK"],["188.1","OK"],["199.1","OK"],["189.1","OK"],["199.2","OK"],["189A.1","Critica"],["200.1","OK"],["190.1","Com Avarias"],["201.1","Com Avarias"],["191","Com Avarias"],["201.2","Com Avarias"],["191.1","Com Avarias"],["202.1","Com Avarias"]]],["Armazéns 20 / 21","sb",[["203","OK"],["203.1","OK"],["204.1","OK"],["204.2","OK"],["205.1","OK"],["206","OK"],["206.1","OK"],["207.1","OK"],["207.2","OK"],["208.1","OK"],["209","OK"],["209.1","OK"],["210.1","OK"],["210.2","OK"],["211.1","OK"],["212.1","Com Avarias"],["212A.1","Com Avarias"]]],["Armazéns 22 / 23","sb",[["213.1","OK"],["213A.1","OK"],["214.1","OK"],["215.1","OK"],["215.2","OK"],["216.1","OK"],["217","OK"],["217.1","Com Avarias"],["218.1","OK"],["218.2","OK"],["219.1","OK"],["220.1","OK"],["220.2","OK"],["221.1","OK"],["221.2","Com Avarias"],["222.1","OK"],["223","Com Avarias"],["223.1","Com Avarias"],["224.1","Com Avarias"]]],["Outerinho 1","ou",[["1","Regular"],["2","Regular"],["3","Com Avarias"],["4","Com Avarias"],["5","Com Avarias"],["6","Regular"],["7","Regular"],["8","Com Avarias"],["9","Crítica"],["10","Crítica"],["11","Crítica"],["12","Crítica"],["13","Regular"],["14","Regular"],["15","Regular"],["16","Regular"]]],["Outerinho 2","ou",[["17","Regular"],["18","Regular"],["19","Regular"],["20","Regular"],["21","Com Avarias"],["22","Com Avarias"],["23","Regular"],["24","Com Avarias"],["25","Regular"],["26","Regular"],["27","Regular"],["28","Regular"],["29","Com Avarias"],["30","Com Avarias"]]],["Outerinho 3","ou",[["31","Regular"],["32","Regular"],["33","Com Avarias"],["34","Regular"],["35","Regular"],["36","Regular"],["37","Regular"],["38","Regular"],["39","Regular"],["40","Regular"],["41","Regular"],["42","Regular"],["43","Regular"],["44","Regular"],["45","Regular"],["46","Regular"],["47","Regular"],["48","Regular"],["49","Regular"],["50","Regular"],["51","Regular"],["52","Regular"],["53","Regular"],["54","Regular"],["55","Com Avarias"],["56","Regular"],["57","Regular"]]],["Armazém 29","sb",[["275","OK"],["275.1","OK"],["276.1","OK"],["276.2","OK"],["277.1","OK"],["278","Sem Defensa"],["278.1","OK"],["279.1","OK"],["279.2","OK"],["280.1","OK"],["281.1","OK"],["281.2","OK"],["282.1","OK"],["283","OK"],["283A.1","OK"]]],["Armazém 30","sb",[["284.1","Com Avarias"],["284A.1","OK"],["285.1","OK"],["286","Com Avarias"],["286.1","OK"],["287.1","OK"],["287.2","OK"],["288.1","OK"],["288.2","OK"],["289.1","Crítica"],["290.1","OK"],["290.2","OK"],["291.1","OK"],["291.2","OK"],["292A","OK"]]],["Armazém 31","sb",[["293.1","OK"],["293.2","Com Avarias"],["294.1","OK"],["294.2","OK"],["295.1","OK"],["295.2","OK"],["296.1","OK"],["296.2","OK"],["297.1","OK"],["298.1","OK"],["298.2","OK"],["299.1","OK"],["299.2","OK"],["300.1","OK"],["300A.1","OK"],["301.1","OK"],["301.2","OK"],["302.1","OK"]]],["Armazém 32","sb",[["303.1","Com Avarias"],["304","Com Avarias"],["304.1","OK"],["305.1","OK"],["305.2","OK"],["306.1","OK"],["306.2","Crítica"],["307.1","OK"],["307.2","Com Avarias"],["308.1","OK"],["309.1","OK"],["309.2","OK"],["310.1","OK"],["311","Crítica"],["311.1","OK"],["312.1","OK"],["312.2","Com Avarias"]]],["Armazém 33","sb",[["313.1","OK"],["313.2","Com Avarias"],["314.1","OK"],["315.1","Com Avarias"],["315.2","OK"],["316.1","OK"],["316.2","OK"],["317.1","OK"],["318","Com Avarias"],["318.1","Com Avarias"],["319.1","Com Avarias"],["319.2","Crítica"],["320.1","Com Avarias"],["320.2","Com Avarias"],["321.1","OK"],["322","Com Avarias"],["322.1","Com Avarias"],["323.1","Crítica"],["323.2","Com Avarias"],["324.1","OK"],["324.2","Crítica"]]],["Armazéns 34 / 35","arm",[["334","Regular"],["335","Regular"],["336","Regular"],["337","Regular"],["338","Regular"],["339","Regular"],["340","Regular"],["341","Regular"],["342","Regular"],["343","Regular"],["344","Regular"],["345","Regular"],["346","Regular"],["347","Regular"],["348","Regular"],["349","Regular"],["350","Regular"],["351","Regular"],["352","Sem Defensa"]]],["Armazém 38","sb",[["379A.1","Com Avarias"],["385.2","Com Avarias"],["379A.2","Com Avarias"],["385.3","Com Avarias"],["380.1","Com Avarias"],["385.4","Crítica"],["380.2","Com Avarias"],["386.1","OK"],["380.3","OK"],["386.2","OK"],["380.4","OK"],["387.1","OK"],["381.1","OK"],["387.2","OK"],["381.2","OK"],["387.3","OK"],["382.1","OK"],["387.4","OK"],["382.2","OK"],["388.1","Com Avarias"],["382.3","OK"],["388.2","Com Avarias"],["382.4","OK"],["388.3","OK"],["383.1","OK"],["388.4","OK"],["383.2","Com Avarias"],["389.1","OK"],["383.3","OK"],["389.2","OK"],["383.4","OK"],["390.1","OK"],["384.1","Com Avarias"],["390.2","OK"],["384.2","OK"],["390A.1","OK"],["385.1","OK"],["390A.2","OK"]]],["Armazém 39","sb",[["391.1","OK"],["396.2","OK"],["391.2","OK"],["396.3","OK"],["392.1","Com Avarias"],["396.4","OK"],["392.2","Crítica"],["397.1","OK"],["392.3","Crítica"],["397.2","OK"],["392.4","Crítica"],["398.1","OK"],["393.1","Crítica"],["398.2","Crítica"],["393.2","OK"],["398.3","OK"],["393.3","OK"],["398.4","OK"],["393.4","OK"],["399.1","OK"],["394.1","OK"],["399.2","OK"],["394.2","OK"],["400.1","OK"],["395.1","OK"],["400.2","OK"],["395.2","OK"],["400.3","OK"],["395.3","OK"],["400.4","OK"],["395.4","OK"],["401.1","OK"],["396.1","OK"]]],["Ilha Barnabé","sb",[["439.1","OK"],["439.2","OK"],["440.1","OK"],["441.1","OK"],["442","OK"],["442.1","OK"],["443.1","OK"],["444.1","OK"],["444.2","OK"],["445.1","OK"],["446.1","OK"],["447.1","OK"],["447.2","OK"],["448.1","OK"],["449.1","OK"],["450","OK"],["450.1","OK"],["451.1","OK"],["452.1","OK"],["453","OK"]]],["Ilha Barnabé - Oeste","cn",[["11","Regular"],["12","Regular"],["13","Regular"],["14","Regular"],["15","Regular"],["16","Regular"],["17","Regular"],["18","Regular"],["19","Regular"],["20","Regular"]]]];
+const M={"a1":{"t":"i","c":"grau 2","q":0,"i":[[null,"Painel Frontal Metálico c/ Placas de Polietileno UHMW"],[null,"Elemento de Borracha Modular MV 1000H x 900L"],[null,"Cunha de Aço Estruturada Tratada 300 x 490 x 900mm"],[null,"Chumbador de Aço Galvanizado Ø 1.1/8\" x 286mm"],[null,"Arruela de Aço Galvanizado Ø 1.1/8\""],[null,"Parafuso Sextavado de Aço Galvanizado Ø 1.1/8\" x 2.1/4\""],[null,"Arruela Chanfrada de Aço Galvanizado Ø 1.7/8\" x 3.3/8\" x 3.3/8\""],[null,"Parafuso Sextavado de Aço Galvanizado Ø 1.3/4\" x 4.1/2\""],[null,"Barra Roscada de Aço Galvanizado Ø 1.1/4\" x 390mm"],[null,"Arruela de Aço Galvanizado Ø 1.1/4\""],[null,"Porca Sextavada de Aço Galvanizado Ø 1.1/4\""],[null,"Suporte de Corrente Galvanizado de 115 x 128 x 390mm"],[null,"Amortecedor Neoprene 90 x 90 x 200mm - Dureza Shore 60A"],[null,"Manilha de Aço Galvanizado - Ø 1\""],[null,"Corrente de Peso em Aço Galvanizado a Fogo"],[null,"Corrente de Restrição em Aço Galvanizado a Fogo"],[null,"Estacas Laterais de 300 x 300mm"]]},"a3":{"t":"i","c":1,"q":1,"i":[[2,"Corrrente SAE 1020 - ø 25,4 mm (ø 1\") - 10 elos"],[2,"Corrrente SAE 1020 - ø 31,8 mm (ø 1 1/4\") - 10 elos"],[2,"Corrrente SAE 1020 - ø 44,4 mm (ø 1 3/4\") - 5 elos"],[2,"Esticador manilha x manilha 1 1/4\" - corpo de 12\""],[2,"Esticador manilha x manilha 1 3/4\" - corpo de 18\""],[4,"Manilha reta união forjada ø 1\""],[2,"Manilha reta união forjada ø 1 1/4\""],[2,"Manilha reta união forjada ø 1 3/4\""],[2,"Suporte de Corrente Tipo U 1\""],[6,"Chumbador M42 X 580mm"],[12,"Parafuso M42"],[12,"Porca M42"],[18,"Arruela M42"],[1,"Painel Metálico"],[1,"Elemento de borracha cilindrico 1360 X 1360"],[1,"Adaptador Metálico"]]},"dl":{"t":"i","c":1,"q":1,"i":[[1,"Painel Metálico 2230x2230 AÇO ASTM-A36"],[1,"Elemento de Borracha Cilindrica SCK1000"],[2,"Corrente de Restrição - 07 elos"],[2,"Corrente de Peso - 12 elos"],[6,"Manilha reta união forjada"],[2,"Ajustador para corrente SAE 1045"],[4,"Suporte de Corrente Tipo U"],[6,"Parafuso SAE 1045 CAB SEXT"],[6,"Arruela Especial"],[6,"Chumbador + Porca Sextavada"]]},"bc":{"t":"i","c":1,"q":1,"i":[[1,"Painel Metálico 1600 x 4450"],[2,"Elemento de borracha Cilíndrico Ø 600"],[2,"Madeira Prancha 250x250x4600"],[2,"Mão Francesa Maior"],[2,"Chumbador M25 x 330"],[4,"Porca M30"],[2,"Parafuso M30"],[2,"Tirante 1,50m x 32mm"],[2,"Corrente de Peso"],[6,"Corrente de Restrição"]]},"cn":{"t":"f","i":[[1,"ELEMENTO DE BORRACHA CÔNICA 1300H"],[1,"PAINEL METÁLICO 2300 X 3860 C/ CHANFRO"],[8,"BARRA ROSCADA COM ROSCA INTEIRA ø 48 x 570 mm"],[8,"ARRUELA ESPECIAL \"L\" - ø 52 x 175 x 130 mm (chapa 10 mm)"],[8,"PARAFUSO SAE 1045 CAB. SEXT. M48 x 100 mm ROSCA INTEIRA UNC + PORCA SEXT. + ARRUELA LISA"],[2,"GRAMPO \"U\" SAE 1045, ø 40 x 536 (mm)"],[2,"CORRENTE GALVANIZADA DE ø1.1/4\" ELO CURTO"],["-","AIUSTADOR PARA CORRENTE ø 1.1/4\", SAE 1045 ROSCA UNC"],[2,"CORRENTE GALVANIZADA DE ø 1.1/8\" ELO CURTO"],["-","AIUSTADOR PARA CORRENTE ø 1.1/8\", SAE 1045 ROSCA UM"],[8,"MANILHA RETA UNIÃO FORJADA - ø 1.1/4\" COM PINO ALLOY ROSCADO"],[8,"PORCA FLANGEADA SEXTAVADA M16 / ø 44 x 6 (mm)"],[9,"PLACAS DE POLIETILENO ESPESSURA 40 mm - UHMWPE - COR PRETA"]]},"ou":{"t":"f","i":[[1,"ELEMENTO DE BORRACHA CONE PSM-AA-1150"],[1,"PAINEL METÁLICO 2200 X 2200 C/ CHANFRO"],[2,"SUPORTE DE CORRENTE TIPO \"U\" - CONCRETO NOVO - Ø1.1/2\" X 653"],[6,"CHUMBADOR CONCRETO NOVO - M42 X 370 (BUCHA)"],[6,"ARRUELA ESPECIAL 3/16\" X 139 X 100"],[6,"PARAFUSO SEXTAVADO DIN 933 M42 X 110"],[6,"PARAFUSO SEXTAVADO DIN 933 M42X80"],[6,"ARRUELA LISA M42 - DIN 126"],[2,"CORRENTE DE RESTRIÇÃO/CISALHAMENTO Ø1\" X 13 ELOS"],[8,"MANILHA RETA C/ PINO ROSCADO Ø1\" GF"],[2,"CORRENTE DE PESO Ø1\" X 08 ELOS GF"],[2,"CORRENTE DE PESO Ø1\" X 07 ELOS GF"],[2,"AJUSTADOR DE CORRENTE Ø1.1/4\" GF"]]},"sb":{"t":"f","p":[1,2,3,4,4,4,8,9,10],"i":[["01 pç","Placa de polietileno de 1300 x 1500 x 120mm"],["02 pçs","Elemento de borracha MV 1000 x 1500 B"],["02 pçs","Cunha de aço estruturada"],["02 pçs","Chumbador de aço galvanizado - Ø1.3/4\" x 610mm"],["02 pçs","Chumbador de aço galvanizado - Ø1.3/4\" x 675mm"],["02 pçs","Chumbador de aço galvanizado - Ø1.3/4\" x 745mm"],["06 pçs","Arruela chanfrada de aço galv. - Ø 1.3/4\" x 3.3/8\" x 3.3/8\""],["06 pçs","Parafuso sextavado de aço galvanizado - Ø1.3/4\" x 200mm"],["12 pçs","Porca sextavada de aço galvanizado - Ø 1.3/4\""]]},"arm":{"t":"f","i":[]}};
+const L=["Lado esquerdo","Frontal","Lado direito","Cabeçote instalado"];
+
+const COND_DEF = ["Selecionar","REGULAR","COM AVARIAS","CRÍTICA"];
+const COND_PART = ["","BOM","REGULAR","RUIM"];
+const COND_CRIT = ["Selecionar","Grau 1","Grau 2","Grau 3"];
+const CRIT_AUTO = {"REGULAR":"Grau 1","COM AVARIAS":"Grau 2","CRÍTICA":"Grau 3"};
+const CRIT_BG = {"Grau 2":"#fff3a8","Grau 3":"#ffc9c9"};
+const PCOL = { y: "#fff3a8", r: "#ffc9c9", g: "#c8f0d0", b: "#cfe6ff" };
+const BERCO_INFO = [
+  { berco: "ALAMOA PB", sigla: "PB" },
+  { berco: "ALAMOA 01", sigla: "AL1" },
+  { berco: "ALAMOA 02", sigla: "AL2" },
+  { berco: "ALAMOA 03/04", sigla: "AL3/4" },
+  { berco: "ALAMOA DOLFIN", sigla: "DL" },
+  { berco: "SABOÓ", sigla: "SB" },
+  { berco: "ARMAZÉM 12", sigla: "A12" },
+  { berco: "ARMAZÉNS 16/17/19", sigla: "A16" },
+  { berco: "ARMAZÉNS 20/21", sigla: "A20" },
+  { berco: "ARMAZÉNS 22/23", sigla: "A22" },
+  { berco: "OUTERINHO 1", sigla: "OU1" },
+  { berco: "OUTERINHO 2", sigla: "OU2" },
+  { berco: "OUTERINHO 3", sigla: "OU3" },
+  { berco: "ARMAZÉM 29", sigla: "A29" },
+  { berco: "ARMAZÉM 30", sigla: "A30" },
+  { berco: "ARMAZÉM 31", sigla: "A31" },
+  { berco: "ARMAZÉM 32", sigla: "A32" },
+  { berco: "ARMAZÉM 33", sigla: "A33" },
+  { berco: "ARMAZÉNS 34/35", sigla: "A34" },
+  { berco: "ARMAZÉM 38", sigla: "A38" },
+  { berco: "ARMAZÉM 39", sigla: "A39" },
+  { berco: "ILHA BARNABÉ", sigla: "IB" },
+  { berco: "ILHA BARNABÉ OESTE", sigla: "IBO" }
+];
+
+const app = document.getElementById('app');
+let current = {};
+let settings = {};
+let db;
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let noDB = false;
+const mem = { records: new Map(), settings: new Map() };
+const openDB = () => new Promise((resolve, reject) => {
+  const r = indexedDB.open('copabo-defensas-v2', 1);
+  r.onupgradeneeded = () => {
+    r.result.createObjectStore('records');
+    r.result.createObjectStore('settings');
+  };
+  r.onsuccess = () => { db = r.result; resolve(); };
+  r.onerror = () => reject(r.error);
+});
+
+const get = (store, key) => new Promise(resolve => {
+  if (!db) return resolve(mem[store].get(key));
+  const r = db.transaction(store).objectStore(store).get(key);
+  r.onsuccess = () => resolve(r.result);
+});
+
+const put = (store, key, val) => new Promise((resolve, reject) => {
+  if (!db) { mem[store].set(key, val); return resolve(); }
+  const t = db.transaction(store, 'readwrite');
+  t.objectStore(store).put(val, key);
+  t.oncomplete = () => resolve();
+  t.onerror = () => reject(t.error);
+});
+
+const del = (store, key) => new Promise((resolve, reject) => {
+  if (!db) { mem[store].delete(key); return resolve(); }
+  const t = db.transaction(store, 'readwrite');
+  t.objectStore(store).delete(key);
+  t.oncomplete = () => resolve();
+  t.onerror = () => reject(t.error);
+});
+
+const key = (si, id) => si + '|' + id;
+const extra = () => settings.extra || {};
+const removed = () => settings.removed || {};
+const list = si => {
+  const base = D[si][2]
+    .concat((extra()[si] || []).map(id => [id, 'Adicionada']))
+    .filter(x => !(removed()[si] || []).includes(x[0]));
+  const order = (settings.order && settings.order[si]) || [];
+  if (!order.length) return base;
+  const map = new Map(base.map(x => [x[0], x]));
+  const ordered = [];
+  for (const id of order) {
+    if (map.has(id)) { ordered.push(map.get(id)); map.delete(id); }
+  }
+  // append any new ids not yet in saved order
+  for (const x of map.values()) ordered.push(x);
+  return ordered;
+};
+
+const blank = () => ({
+  photos: [],
+  photoMeta: [],
+  condition: 'Selecionar',
+  criticality: 'Selecionar',
+  notes: '',
+  parts: {},
+  partNotes: {},
+  partQty: {},
+  partColors: {},
+  inspectionDate: ''
+});
+
+function normalizeRecord(v) {
+  if (!v) return blank();
+  if (!v.partNotes) v.partNotes = {};
+  if (!v.partQty) v.partQty = {};
+  if (!v.partColors) v.partColors = {};
+  for (const k of Object.keys(v.partNotes)) v.partNotes[k] = String(v.partNotes[k] || '').slice(0, 70);
+  // Migrate old part values if needed
+  if (v.parts) {
+    for (const k of Object.keys(v.parts)) {
+      const p = v.parts[k];
+      if (typeof p === 'string') {
+        // map old labels
+        if (p === 'OK') v.parts[k] = 'BOM';
+        else if (p === 'Com Avarias') v.parts[k] = 'REGULAR';
+        else if (p === 'Crítica') v.parts[k] = 'RUIM';
+        else if (p === 'Não se aplica') v.parts[k] = '';
+      }
+    }
+  }
+  if (v.condition === 'OK') v.condition = 'Selecionar';
+  if (v.condition === 'Com Avarias') v.condition = 'COM AVARIAS';
+  if (v.condition === 'Crítica') v.condition = 'CRÍTICA';
+  if (!COND_DEF.includes(v.condition)) v.condition = 'Selecionar';
+  if (!v.criticality || !COND_CRIT.includes(v.criticality)) v.criticality = 'Selecionar';
+  if (v.criticality === 'Selecionar' && CRIT_AUTO[v.condition]) v.criticality = CRIT_AUTO[v.condition];
+  return v;
+}
+
+function header() {
+  return `<header class="head"><div><div class="brand">COPABO INFRA</div><div class="sub">Sistema de inspeção de defensas</div></div><div class="sub">Modo local · ${navigator.onLine ? 'Conectado' : 'Offline'}</div></header>`;
+}
+
+function diag() {
+  const sec = window.isSecureContext;
+  const chk = [
+    ['Página segura (HTTPS)', sec],
+    ['Câmera ao vivo', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)],
+    ['GPS', !!navigator.geolocation],
+    ['Armazenamento local', !noDB],
+    ['Uso offline / instalar na tela inicial', 'serviceWorker' in navigator && location.protocol.startsWith('http')]
+  ];
+  if (chk.every(x => x[1])) return '<div class="status">✓ Aparelho compatível: câmera ao vivo, GPS e armazenamento local disponíveis.</div>';
+  return `<div class="card" style="border-color:#e7c17e"><b>Compatibilidade deste aparelho</b>
+    <ul style="margin:6px 0 8px 18px;padding:0">${chk.map(([t, ok]) => `<li>${ok ? '✓' : '✗'} ${t}</li>`).join('')}</ul>
+    <p class="muted" style="margin:0">${sec ? '' : 'Câmera ao vivo, GPS e uso offline só funcionam em página <b>HTTPS</b>. Abra o app por um link https:// (hospedado) em vez de abrir o arquivo ou um endereço http://. Enquanto isso, a “Câmera do sistema” continua funcionando, sem GPS. '}${noDB ? 'Sem armazenamento local: os dados só ficam enquanto a página estiver aberta (modo anônimo ou arquivo local). ' : ''}</p></div>`;
+}
+
+function home() {
+  const total = D.reduce((a, s, i) => a + list(i).length, 0);
+  app.innerHTML = header() +
+    `<h1>Relatório de Defensas</h1>
+    <p class="muted">Inspeções salvas somente neste aparelho. Não há sincronização entre usuários.</p>
+    ${diag()}
+    <div class="card">
+      <button class="btn full" data-a="start">Iniciar inspeção</button>
+      <p style="margin-bottom:0;margin-top:8px"><button class="btn secondary full" data-a="suggest">Enviar sugestão</button></p>
+    </div>
+    <div class="card">
+      <button class="btn secondary full" data-a="export">Gerar relatórios</button>
+      <button class="btn secondary full" style="margin-top:8px" data-a="settings">Configurações e materiais</button>
+    </div>
+    <p class="muted" style="text-align:center">${total} defensas cadastradas</p>
+    <div class="foot">Feito por: Lorenzo Hayama Marchetti</div>`;
+}
+
+function sectors() {
+  app.innerHTML = header() +
+    `<div class="topline"><button class="btn secondary" data-a="home">‹ Início</button><h2>Escolha um setor</h2></div>` +
+    D.map((s, i) =>
+      `<div class="item" data-a="sector" data-si="${i}">
+        <span><b>${esc(s[0])}</b><small>${list(i).length} defensas · Diagrama ${s[1] || 'em análise'}</small></span>
+        <span>›</span>
+      </div>`
+    ).join('');
+}
+
+async function sector(si) {
+  current.si = si;
+  app.innerHTML = header() +
+    `<div class="topline"><button class="btn secondary" data-a="home">‹ Início</button><h2>${esc(D[si][0])}</h2></div>
+    <p class="muted" style="margin:0 0 8px">Segure e arraste pelo ícone ☰ para reordenar.</p>
+    <div id="items">Carregando...</div>
+    <button class="btn full" data-a="add" style="margin-top:12px">＋ Adicionar defensa</button>`;
+  let rows = '';
+  for (const [id, cond] of list(si)) {
+    const v = normalizeRecord(await get('records', key(si, id)) || blank());
+    const count = (v.photos || []).filter(Boolean).length;
+    const label = v.condition && v.condition !== 'Selecionar' ? v.condition : 'Selecionar';
+    const pillClass = label === 'REGULAR' ? 'ok' : (label === 'CRÍTICA' ? 'bad' : (label === 'COM AVARIAS' ? 'warn' : ''));
+    rows += `<div class="item" data-a="def" data-si="${si}" data-id="${esc(id)}" draggable="false">
+      <span class="handle" data-handle="1" title="Arrastar">☰</span>
+      <span style="flex:1;min-width:0"><b>${esc(id)}</b><small>${esc(label)} · ${count}/4 fotos</small></span>
+      <span class="pill ${pillClass}">${esc(label)}</span>
+    </div>`;
+  }
+  document.getElementById('items').innerHTML = rows || '<p class="muted">Nenhuma defensa neste setor.</p>';
+  bindReorder(si);
+}
+
+function bindReorder(si) {
+  const container = document.getElementById('items');
+  if (!container) return;
+
+  let dragEl = null;
+  let startY = 0;
+  let grabOffset = 0;
+  let moved = false;
+  let active = false;
+  let fromIndex = -1;
+
+  const getItems = () => [...container.querySelectorAll('.item[data-id]')];
+
+  async function persistOrder() {
+    const ids = getItems().map(el => el.dataset.id);
+    settings.order = settings.order || {};
+    settings.order[si] = ids;
+    await put('settings', 'order', settings.order);
+  }
+
+  function clientY(e) {
+    if (typeof e.clientY === 'number') return e.clientY;
+    if (e.touches && e.touches[0]) return e.touches[0].clientY;
+    if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientY;
+    return 0;
+  }
+
+  function onStart(e) {
+    const handle = e.target.closest('[data-handle]');
+    if (!handle) return;
+    const item = handle.closest('.item');
+    if (!item || !container.contains(item)) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    active = true;
+    moved = false;
+    dragEl = item;
+    fromIndex = getItems().indexOf(item);
+    startY = clientY(e);
+    const rect = item.getBoundingClientRect();
+    grabOffset = startY - rect.top;
+
+    dragEl.classList.add('dragging');
+    document.body.classList.add('reordering');
+    container.classList.add('reordering');
+    // keep in document flow (no gap) — only lift visually
+    dragEl.style.position = 'relative';
+    dragEl.style.zIndex = '50';
+    dragEl.style.transition = 'none';
+    dragEl.style.pointerEvents = 'none';
+    dragEl.style.boxShadow = '0 10px 28px rgba(18,61,89,.3)';
+    dragEl.style.transform = 'translateY(0px)';
+
+    if (e.pointerId != null) {
+      try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+  }
+
+  function onMove(e) {
+    if (!active || !dragEl) return;
+    e.preventDefault();
+    const y = clientY(e);
+    if (Math.abs(y - startY) > 3) moved = true;
+
+    // visual follow relative to start
+    const dy = y - startY;
+    dragEl.style.transform = `translateY(${dy}px)`;
+
+    // reorder when finger crosses a neighbor midpoint
+    const items = getItems();
+    const idx = items.indexOf(dragEl);
+    if (idx < 0) return;
+    const h = dragEl.offsetHeight || 56;
+
+    // previous
+    if (idx > 0) {
+      const prev = items[idx - 1];
+      const prevMid = prev.offsetTop + prev.offsetHeight / 2;
+      // where the drag center would be in document coords
+      const dragCenter = dragEl.offsetTop + dy + h / 2;
+      if (dragCenter < prevMid) {
+        container.insertBefore(dragEl, prev);
+        // re-anchor so the card stays under the finger without jump
+        startY = y;
+        dragEl.style.transform = 'translateY(0px)';
+        if (navigator.vibrate) try { navigator.vibrate(6); } catch (_) {}
+        return;
+      }
+    }
+    // next
+    if (idx < items.length - 1) {
+      const next = items[idx + 1];
+      const nextMid = next.offsetTop + next.offsetHeight / 2;
+      const dragCenter = dragEl.offsetTop + dy + h / 2;
+      if (dragCenter > nextMid) {
+        // insert after next
+        if (next.nextSibling) container.insertBefore(dragEl, next.nextSibling);
+        else container.appendChild(dragEl);
+        startY = y;
+        dragEl.style.transform = 'translateY(0px)';
+        if (navigator.vibrate) try { navigator.vibrate(6); } catch (_) {}
+      }
+    }
+  }
+
+  async function onEnd(e) {
+    if (!active) return;
+    if (e) e.preventDefault();
+    active = false;
+    if (!dragEl) return;
+
+    dragEl.style.transform = '';
+    dragEl.style.position = '';
+    dragEl.style.zIndex = '';
+    dragEl.style.transition = '';
+    dragEl.style.pointerEvents = '';
+    dragEl.style.boxShadow = '';
+    dragEl.classList.remove('dragging');
+    document.body.classList.remove('reordering');
+    container.classList.remove('reordering');
+
+    const didMove = moved || getItems().indexOf(dragEl) !== fromIndex;
+    dragEl = null;
+    moved = false;
+    fromIndex = -1;
+
+    if (didMove) await persistOrder();
+  }
+
+  container.addEventListener('pointerdown', onStart);
+  window.addEventListener('pointermove', onMove, { passive: false });
+  window.addEventListener('pointerup', onEnd);
+  window.addEventListener('pointercancel', onEnd);
+
+  container.addEventListener('touchstart', onStart, { passive: false });
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('touchend', onEnd, { passive: false });
+  window.addEventListener('touchcancel', onEnd, { passive: false });
+
+  container.addEventListener('click', e => {
+    if (e.target.closest('[data-handle]')) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
+}
+
+
+async function openDef(si, id) {
+  const original = list(si).find(x => x[0] === id);
+  current = { si, id, condition: original?.[1] || '' };
+  current.v = normalizeRecord(await get('records', key(si, id)) || blank());
+  paintDef();
+}
+
+function paintDef() {
+  const { si, id, v } = current;
+  const modelKey = D[si][1];
+  const items = (M[modelKey]?.i || []);
+  app.innerHTML = header() +
+    `<div class="topline"><button class="btn secondary" data-a="sector" data-si="${si}">‹ Setor</button><b>${esc(D[si][0])} · Defensa ${esc(id)}</b></div>
+    <div class="card">
+      <label>Data de inspeção</label>
+      <input type="date" id="inspectionDate" value="${esc(v.inspectionDate || '')}">
+      <p class="muted" style="margin:4px 0 0">Preenchida automaticamente pela foto em tempo real. Sem foto em tempo real, digite a data.</p>
+      <label>Condição da defensa</label>
+      <select id="condition">${COND_DEF.map(x => `<option value="${x}" ${v.condition === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      <p class="muted" id="critAuto" style="margin:8px 0 0">Criticidade (automática): <b>${esc(CRIT_AUTO[v.condition] || '—')}</b></p>
+      <label>Observações gerais (máx. 220 caracteres)</label>
+      <textarea id="notes" maxlength="220" placeholder="Descreva as condições encontradas (máx. 220 caracteres)">${esc(v.notes || '')}</textarea>
+    </div>
+    <h2>Registro fotográfico</h2>
+    <div class="grid">${L.map((label, j) =>
+      `<div class="photo">
+        ${v.photos[j] ? `<img src="${v.photos[j]}" alt="${label}">` : `<div style="height:150px;display:grid;place-items:center;color:#71818c">Sem fotografia</div>`}
+        <b>${label}</b>
+        <input class="hidden" type="file" accept="image/*" capture="environment" id="photo${j}" data-photo="${j}">
+        <button class="btn secondary full" data-a="take" data-j="${j}">${v.photos[j] ? 'Refazer foto' : 'Tirar foto'}</button>
+        <button class="btn secondary full" style="margin-top:6px;font-size:12px;padding:8px" data-a="takesys" data-j="${j}">Câmera do sistema (alta resolução)</button>
+        ${v.photos[j] ? `<button class="btn danger full" data-a="delphoto" data-j="${j}">Remover foto</button>` : ''}
+        ${v.photoMeta[j] ? `<small class="muted">${esc(v.photoMeta[j].date)} · ${esc(v.photoMeta[j].location)}</small>` : ''}
+      </div>`
+    ).join('')}</div>
+    <div class="card">
+      <h2>Componentes do diagrama</h2>
+      <p class="muted">${esc(modelKey || 'Diagrama não definido')}</p>
+      ${items.map((p, j) => {
+        const status = v.parts[j] || '';
+        const note = (v.partNotes[j] || '').slice(0, 70);
+        const qty = v.partQty[j] ?? '';
+        const col = v.partColors[j] || '';
+        return `<div class="component">
+          <div class="comp-head">
+            <span>${j + 1}. ${esc(p[1])}</span>
+            <input class="qty" type="number" inputmode="numeric" min="0" max="999" data-partqty="${j}" value="${esc(qty)}" placeholder="Qtd. avariada" title="Quantidade avariada" aria-label="Quantidade avariada">
+            <select data-part="${j}">
+              ${COND_PART.map(x => `<option value="${x}" ${status === x ? 'selected' : ''}>${x || 'Não avaliado'}</option>`).join('')}
+            </select>
+          </div>
+          <div class="obs"><textarea data-partnote="${j}" maxlength="70" class="${col ? 'bg-' + col : ''}" placeholder="Observação do componente (máx. 70 caracteres)">${esc(note)}</textarea><button type="button" class="pal-btn" data-a="pal" data-j="${j}" title="Cor de fundo da observação" aria-label="Cor de fundo da observação" style="${col ? 'background:' + PCOL[col] : ''}">🎨</button></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="actions">
+      <button class="btn" data-a="pdfone">PDF desta defensa</button>
+      <button class="btn danger" data-a="reset">Limpar informações</button>
+      <button class="btn danger" data-a="remove">Remover defensa</button>
+    </div>
+    <p class="muted">Salvamento automático ao alterar campos. Os dados permanecem neste aparelho.</p>`;
+}
+
+function closePalette() {
+  const p = document.getElementById('pal');
+  if (p) p.remove();
+  document.removeEventListener('pointerdown', palOutside, true);
+  window.removeEventListener('scroll', closePalette);
+}
+function palOutside(e) { if (!e.target.closest('#pal')) closePalette(); }
+async function applyColor(j, c) {
+  current.v.partColors = current.v.partColors || {};
+  if (c) current.v.partColors[j] = c; else delete current.v.partColors[j];
+  const ta = app.querySelector(`[data-partnote="${j}"]`);
+  if (ta) ta.className = c ? 'bg-' + c : '';
+  const bt = app.querySelector(`[data-a="pal"][data-j="${j}"]`);
+  if (bt) bt.style.background = c ? PCOL[c] : '';
+  await put('records', key(current.si, current.id), current.v);
+}
+function openPalette(btn, j) {
+  closePalette();
+  const cur = (current.v.partColors || {})[j] || '';
+  const p = document.createElement('div');
+  p.id = 'pal';
+  p.innerHTML = [['', '#ffffff', 'Padrão'], ['y', PCOL.y, 'Amarelo'], ['r', PCOL.r, 'Vermelho'], ['g', PCOL.g, 'Verde'], ['b', PCOL.b, 'Azul']]
+    .map(([c, bg, t]) => `<button type="button" data-c="${c}" class="${cur === c ? 'on' : ''}" style="background:${bg}" title="${t}" aria-label="${t}"></button>`).join('');
+  document.body.appendChild(p);
+  const r = btn.getBoundingClientRect(), w = p.offsetWidth, hh = p.offsetHeight;
+  p.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px';
+  p.style.top = (r.bottom + 6 + hh > innerHeight ? r.top - hh - 6 : r.bottom + 6) + 'px';
+  p.onclick = async e => { const x = e.target.closest('button'); if (!x) return; await applyColor(j, x.dataset.c); closePalette(); };
+  setTimeout(() => { document.addEventListener('pointerdown', palOutside, true); window.addEventListener('scroll', closePalette, { passive: true }); }, 0);
+}
+
+async function saveCurrent() {
+  const { si, id, v } = current;
+  if (!v) return;
+  const dateEl = document.getElementById('inspectionDate');
+  const condEl = document.getElementById('condition');
+  const critEl = document.getElementById('criticality');
+  const notesEl = document.getElementById('notes');
+  if (dateEl) v.inspectionDate = dateEl.value || '';
+  if (condEl) v.condition = condEl.value || v.condition;
+  if (critEl) v.criticality = critEl.value || v.criticality;
+  if (notesEl) v.notes = notesEl.value || '';
+  await put('records', key(si, id), v);
+}
+
+const WD = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+const p2 = n => String(n).padStart(2, '0');
+const isoLocal = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+const fmtD = d => `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()}`;
+const fmtT = d => `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
+const geo = { pos: null, watch: null, addr: '', addrKey: '', busy: '' };
+const gkey = c => c.latitude.toFixed(3) + ',' + c.longitude.toFixed(3);
+const addrOf = c => (c && geo.addrKey === gkey(c)) ? geo.addr : '';
+
+async function lookupAddr(c) {
+  const k = gkey(c);
+  if (k === geo.addrKey || geo.busy === k || !navigator.onLine) return;
+  geo.busy = k;
+  try {
+    const ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), 6000);
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=pt-BR&lat=${c.latitude}&lon=${c.longitude}`, { signal: ctl.signal });
+    clearTimeout(to);
+    const j = await r.json(), a = j.address || {};
+    const parts = [[a.road, a.house_number].filter(Boolean).join(', '), a.suburb || a.neighbourhood, a.city || a.town || a.village, a.state].filter(Boolean);
+    geo.addr = parts.join(' - ') || j.display_name || '';
+    geo.addrKey = k;
+  } catch (e) {}
+  geo.busy = '';
+}
+function startGeo(cb) {
+  if (!navigator.geolocation || geo.watch != null) return;
+  geo.watch = navigator.geolocation.watchPosition(p => { geo.pos = p; lookupAddr(p.coords); cb && cb(); }, () => {}, { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
+}
+function stopGeo() { if (geo.watch != null) { navigator.geolocation.clearWatch(geo.watch); geo.watch = null; } }
+
+function drawShape(ctx, s, lw) {
+  const pass = (col, w) => {
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (s.k === 'pen') {
+      s.pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]));
+      if (s.pts.length === 1) ctx.lineTo(s.pts[0][0] + .1, s.pts[0][1]);
+      ctx.stroke();
+    } else if (s.k === 'circle') {
+      ctx.arc(s.x1, s.y1, Math.hypot(s.x2 - s.x1, s.y2 - s.y1), 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      const an = Math.atan2(s.y2 - s.y1, s.x2 - s.x1), hd = lw * 5;
+      ctx.moveTo(s.x1, s.y1);
+      ctx.lineTo(s.x2 - Math.cos(an) * hd * .6, s.y2 - Math.sin(an) * hd * .6);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(s.x2, s.y2);
+      ctx.lineTo(s.x2 - hd * Math.cos(an - .45), s.y2 - hd * Math.sin(an - .45));
+      ctx.lineTo(s.x2 - hd * Math.cos(an + .45), s.y2 - hd * Math.sin(an + .45));
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  };
+  pass('rgba(0,0,0,.45)', lw + Math.max(2, lw * .6));
+  pass(s.c, lw);
+}
+
+function drawStamp(ctx, W, H, info, label) {
+  const d = info.now, p = info.pos && info.pos.coords;
+  const u = Math.max(13, Math.round(Math.min(W, H) / 40)), pd = Math.round(u * .75), maxW = Math.round(W * .5);
+  const F = (s, bold) => `${bold ? 'bold ' : ''}${Math.round(s)}px system-ui,Arial,sans-serif`;
+  const wrap = (t, font, mw) => {
+    ctx.font = font;
+    const out = []; let line = '';
+    for (const w of String(t).split(/\s+/)) {
+      const tt = line ? line + ' ' + w : w;
+      if (ctx.measureText(tt).width > mw && line) { out.push(line); line = w; } else line = tt;
+    }
+    if (line) out.push(line);
+    return out;
+  };
+  const rows = [[fmtT(d), F(u * 2.3, 1), u * 2.5], [`${WD[d.getDay()]}, ${fmtD(d)}`, F(u, 1), u * 1.3]];
+  wrap(info.addr || 'Endereço indisponível', F(u * .9), maxW - 2 * pd).slice(0, 3).forEach(t => rows.push([t, F(u * .9), u * 1.12]));
+  rows.push([p ? `Lat ${p.latitude.toFixed(6)} · Lon ${p.longitude.toFixed(6)} · ±${Math.round(p.accuracy)} m` : 'Localização não disponível', F(u * .9), u * 1.12]);
+  rows.push([label, F(u * .9), u * 1.12]);
+  let w = 0;
+  rows.forEach(r => { ctx.font = r[1]; w = Math.max(w, ctx.measureText(r[0]).width); });
+  const bw = Math.min(w, maxW - 2 * pd) + 2 * pd, bh = rows.reduce((a, r) => a + r[2], 0) + 2 * pd;
+  const x = Math.round(u * .8), y = Math.round(H - bh - u * .8), r0 = u * .6;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  ctx.beginPath();
+  ctx.moveTo(x + r0, y); ctx.arcTo(x + bw, y, x + bw, y + bh, r0); ctx.arcTo(x + bw, y + bh, x, y + bh, r0);
+  ctx.arcTo(x, y + bh, x, y, r0); ctx.arcTo(x, y, x + bw, y, r0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.textBaseline = 'top';
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = u * .15;
+  let cy = y + pd;
+  rows.forEach(r => { ctx.font = r[1]; ctx.fillText(r[0], x + pd, cy, bw - 2 * pd); cy += r[2]; });
+  ctx.restore();
+}
+
+function openEditor(src, info, j) {
+  const { si, id } = current;
+  const sc = Math.min(1, 2200 / Math.max(src.width, src.height));
+  const W = Math.round(src.width * sc), H = Math.round(src.height * sc);
+  const base = document.createElement('canvas');
+  base.width = W; base.height = H;
+  base.getContext('2d').drawImage(src, 0, 0, W, H);
+  const label = `${D[si][0]} · Defensa ${id}`;
+  const shapes = []; let tool = 'arrow', color = '#ff2a2a', cur = null;
+  const lw = Math.max(5, Math.round(Math.min(W, H) / 110));
+  const box = document.createElement('div');
+  box.id = 'ed';
+  box.innerHTML = `<div class="ed-top"><b>Marcar problemas</b> · seta, círculo ou desenho livre (opcional)</div>
+    <canvas id="edC"></canvas>
+    <div class="ed-tools">
+      <button data-tool="arrow" class="on">➜ Seta</button><button data-tool="circle">◯ Círculo</button><button data-tool="pen">✎ Livre</button>
+      ${['#ff2a2a', '#ffd400', '#22c55e', '#ffffff'].map((c, i) => `<button class="col ${i ? '' : 'on'}" data-col="${c}" style="background:${c}" aria-label="Cor"></button>`).join('')}
+      <button id="edUndo">Desfazer</button><button id="edClear">Limpar</button>
+    </div>
+    <div class="ed-bar"><button class="btn secondary" id="edCancel">Descartar</button><button class="btn" id="edOk">Salvar foto</button></div>`;
+  document.body.appendChild(box);
+  const cv = box.querySelector('#edC'), ctx = cv.getContext('2d');
+  cv.width = W; cv.height = H;
+  const render = () => {
+    ctx.drawImage(base, 0, 0);
+    shapes.concat(cur ? [cur] : []).forEach(s => drawShape(ctx, s, lw));
+    drawStamp(ctx, W, H, info, label);
+  };
+  render();
+  const pt = e => { const r = cv.getBoundingClientRect(), k = W / r.width; return [(e.clientX - r.left) * k, (e.clientY - r.top) * k]; };
+  cv.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+    const [x, y] = pt(e);
+    cur = tool === 'pen' ? { k: 'pen', c: color, pts: [[x, y]] } : { k: tool, c: color, x1: x, y1: y, x2: x, y2: y };
+    render();
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!cur) return;
+    e.preventDefault();
+    const [x, y] = pt(e);
+    if (cur.k === 'pen') cur.pts.push([x, y]); else { cur.x2 = x; cur.y2 = y; }
+    render();
+  });
+  const end = () => { if (cur) { shapes.push(cur); cur = null; render(); } };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+  box.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { tool = b.dataset.tool; box.querySelectorAll('[data-tool]').forEach(x => x.classList.toggle('on', x === b)); });
+  box.querySelectorAll('[data-col]').forEach(b => b.onclick = () => { color = b.dataset.col; box.querySelectorAll('[data-col]').forEach(x => x.classList.toggle('on', x === b)); });
+  box.querySelector('#edUndo').onclick = () => { shapes.pop(); render(); };
+  box.querySelector('#edClear').onclick = () => { shapes.length = 0; render(); };
+  box.querySelector('#edCancel').onclick = () => { if (!shapes.length || confirm('Descartar esta foto?')) box.remove(); };
+  box.querySelector('#edOk').onclick = async () => {
+    const v = current.v, p = info.pos && info.pos.coords;
+    v.photos[j] = cv.toDataURL('image/jpeg', .92);
+    v.photoMeta[j] = {
+      date: `${WD[info.now.getDay()]}, ${fmtD(info.now)} ${fmtT(info.now)}`,
+      location: p ? `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)} (±${Math.round(p.accuracy)} m)` : 'GPS indisponível',
+      address: info.addr || '', lat: p?.latitude, lon: p?.longitude,
+      realtime: !!info.realtime, annotated: shapes.length > 0
+    };
+    if (info.realtime) v.inspectionDate = isoLocal(info.now);
+    box.remove();
+    await put('records', key(current.si, current.id), v);
+    paintDef();
+    if (!p) alert('Foto salva com data e horário, mas sem GPS. ' + (window.isSecureContext ? 'Autorize a localização e refaça a foto se precisar das coordenadas.' : 'O GPS só funciona em página HTTPS: abra o app por um link https://.'));
+  };
+}
+
+async function startLive(j) {
+  const fallback = () => {
+    if (!window.isSecureContext && !startLive.warned) { startLive.warned = true; alert('Câmera ao vivo e GPS exigem página HTTPS. Vou abrir a câmera do sistema (sem GPS). Para o recurso completo, abra o app por um link https://.'); }
+    document.getElementById('photo' + j).click();
+  };
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fallback();
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1440 } }, audio: false });
+  } catch (e) { return fallback(); }
+  const box = document.createElement('div');
+  box.id = 'cam';
+  box.innerHTML = `<video playsinline muted autoplay></video><div class="cam-info"></div>
+    <div class="cam-bar"><button class="btn secondary" id="camX">Cancelar</button><button id="camShot" aria-label="Capturar"></button><span style="width:84px"></span></div>`;
+  document.body.appendChild(box);
+  const vid = box.querySelector('video'), inf = box.querySelector('.cam-info');
+  vid.srcObject = stream;
+  try { await vid.play(); } catch (_) {}
+  const tick = () => {
+    const d = new Date(), p = geo.pos && geo.pos.coords;
+    inf.innerHTML = `<span class="t">${fmtT(d)}</span>${WD[d.getDay()]}, ${fmtD(d)}<br>${esc(p ? (addrOf(p) || (navigator.onLine ? 'Buscando endereço…' : 'Endereço indisponível (sem internet)')) : 'Aguardando GPS…')}<br>${p ? `Lat ${p.latitude.toFixed(6)} · Lon ${p.longitude.toFixed(6)} · ±${Math.round(p.accuracy)} m` : 'Localização não disponível'}`;
+  };
+  tick();
+  const iv = setInterval(tick, 1000);
+  startGeo(tick);
+  const close = () => { clearInterval(iv); stream.getTracks().forEach(t => t.stop()); stopGeo(); box.remove(); };
+  box.querySelector('#camX').onclick = close;
+  box.querySelector('#camShot').onclick = () => {
+    if (!vid.videoWidth) return;
+    const now = new Date(), c = document.createElement('canvas');
+    c.width = vid.videoWidth; c.height = vid.videoHeight;
+    c.getContext('2d').drawImage(vid, 0, 0);
+    const pos = geo.pos, addr = addrOf(pos && pos.coords);
+    close();
+    openEditor(c, { now, pos, addr, realtime: true }, j);
+  };
+}
+
+async function photoCapture(j, file) {
+  if (!file) return;
+  const pos = await new Promise(res => navigator.geolocation ? navigator.geolocation.getCurrentPosition(res, () => res(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }) : res(null));
+  if (pos) await lookupAddr(pos.coords);
+  const bmp = await createImageBitmap(file);
+  const ts = file.lastModified || Date.now();
+  openEditor(bmp, { now: new Date(ts), pos, addr: addrOf(pos && pos.coords), realtime: Math.abs(Date.now() - ts) < 6e5 }, j);
+}
+
+function settingsPage() {
+  const inspector = settings.inspectorName || 'Hamilton';
+  const contract = settings.contractNumber || 'SPA/12.2025';
+  const isHamilton = inspector.trim().toLowerCase() === 'hamilton';
+  app.innerHTML = header() +
+    `<div class="topline"><button class="btn secondary" data-a="home">‹ Início</button><h2>Configurações e materiais</h2></div>
+    <p class="muted">Adicione os arquivos oficiais. Eles serão armazenados localmente neste aparelho e permanecem entre sessões.</p>
+    <div class="card">
+      <label>Contrato n°</label>
+      <input type="text" id="contractNumber" value="${esc(contract)}" placeholder="SPA/12.2025">
+      <label>Nome do inspetor</label>
+      <input type="text" id="inspectorName" value="${esc(inspector)}" placeholder="Hamilton">
+      <p class="muted" style="margin-top:6px">A assinatura digital padrão permanece disponível. Se o inspetor for outro, envie a assinatura digital abaixo.</p>
+      <div id="customSigBlock" class="${isHamilton ? 'hidden' : ''}">
+        <label>Assinatura digital do inspetor atual</label>
+        <input type="file" accept="image/*" data-asset="signatureCustom">
+        <img id="preview-signatureCustom" class="setting-img">
+      </div>
+    </div>
+    <div class="card">
+      ${[['logoCopabo','Logo 1'],['logoPorto','Logo 2'],['signature','Assinatura digital padrão']].map(([id, label]) =>
+        `<label>${label}</label><input type="file" accept="image/*" data-asset="${id}"><img id="preview-${id}" class="setting-img">`
+      ).join('')}
+    </div>
+    <div class="card">
+      <h2>Diagramas</h2>
+      ${Object.keys(M).map(k =>
+        `<label>Diagrama ${k.toUpperCase()}</label><input type="file" accept="image/*,.pdf,application/pdf" data-diagram="${k}"><img id="preview-${k}" class="setting-img">`
+      ).join('')}
+    </div>
+    <button class="btn full" data-a="home">Concluir</button>`;
+  loadPreviews();
+  const contractInput = document.getElementById('contractNumber');
+  contractInput.addEventListener('change', async () => {
+    const val = contractInput.value.trim() || 'SPA/12.2025';
+    settings.contractNumber = val;
+    await put('settings', 'contractNumber', val);
+  });
+  const nameInput = document.getElementById('inspectorName');
+  nameInput.addEventListener('change', async () => {
+    const name = nameInput.value.trim() || 'Hamilton';
+    settings.inspectorName = name;
+    await put('settings', 'inspectorName', name);
+    const block = document.getElementById('customSigBlock');
+    if (name.toLowerCase() === 'hamilton') block.classList.add('hidden');
+    else block.classList.remove('hidden');
+  });
+}
+
+async function loadPreviews() {
+  for (const id of ['logoCopabo', 'logoPorto', 'signature', 'signatureCustom', ...Object.keys(M)]) {
+    const val = await get('settings', id);
+    const el = document.getElementById('preview-' + id);
+    if (el && val) el.src = val;
+  }
+  // also diagram previews
+  for (const k of Object.keys(M)) {
+    const val = await get('settings', 'diagram_' + k);
+    const el = document.getElementById('preview-' + k);
+    if (el && val) el.src = val;
+  }
+}
+
+async function exportPage() {
+  app.innerHTML = header() +
+    `<div class="topline"><button class="btn secondary" data-a="home">‹ Início</button><h2>Gerar relatórios PDF</h2></div>
+    <div class="card">
+      <label>Escopo</label>
+      <select id="exportScope">
+        <option value="all">Todos os setores</option>
+        ${D.map((s, i) => `<option value="${i}">${esc(s[0])}</option>`).join('')}
+      </select>
+      <label style="margin-top:12px"><input type="checkbox" id="incomplete" style="width:auto"> Incluir inspeções com menos de quatro fotos</label>
+      <p class="muted">O PDF é gerado direto no aparelho (uma folha A4 paisagem por defensa). Ao terminar, use “Compartilhar / Salvar” ou “Abrir PDF”.</p>
+      <button class="btn full" data-a="printall">Gerar PDF</button>
+    </div>`;
+}
+
+async function asset(id) {
+  return await get('settings', id);
+}
+
+async function getInspectorInfo() {
+  const name = (settings.inspectorName || await get('settings', 'inspectorName') || 'Hamilton').trim() || 'Hamilton';
+  let sig = null;
+  if (name.toLowerCase() === 'hamilton') {
+    sig = await asset('signature');
+  } else {
+    sig = await asset('signatureCustom') || await asset('signature');
+  }
+  return { name, sig };
+}
+
+/* ===================================================================
+   GERADOR DE PDF PRÓPRIO — A4 paisagem, 1 folha por defensa
+   Não usa window.print() (o iOS imprimia a tela do app em vez do relatório).
+   Cada folha é desenhada em canvas (297x210 mm) e embutida em um PDF real.
+   Funciona offline, sem bibliotecas externas.
+   =================================================================== */
+const PW = 297, PH = 210, K = 8; // 8 px por mm => 2376 x 1680 px (~203 dpi)
+const mm = v => v * K;
+const FONT = (s, b) => `${b ? 'bold ' : ''}${(s * K).toFixed(1)}px Arial, Helvetica, sans-serif`;
+const fmtISO = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s.split('-').reverse().join('/') : (s || '');
+
+function loadImg(src) {
+  return new Promise(res => {
+    if (!src) return res(null);
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = () => res(null);
+    i.src = src;
+  });
+}
+
+function wrapLines(ctx, text, font, maxW) {
+  ctx.font = font;
+  const out = [];
+  for (const para of String(text ?? '').split(/\n/)) {
+    let line = '';
+    for (const w of para.split(/\s+/).filter(Boolean)) {
+      const t = line ? line + ' ' + w : w;
+      if (ctx.measureText(t).width <= maxW) { line = t; continue; }
+      if (line) { out.push(line); line = ''; }
+      let cur = '';
+      for (const ch of w) {
+        if (ctx.measureText(cur + ch).width > maxW && cur) { out.push(cur); cur = ch; }
+        else cur += ch;
+      }
+      line = cur;
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+function fitWrap(ctx, text, maxW, maxLines, fs0, fsMin, bold) {
+  let fs = fs0, lines = wrapLines(ctx, text, FONT(fs, bold), mm(maxW));
+  while (lines.length > maxLines && fs > fsMin) {
+    fs = Math.max(fsMin, fs - 0.1);
+    lines = wrapLines(ctx, text, FONT(fs, bold), mm(maxW));
+  }
+  return { fs, lines: lines.slice(0, maxLines) };
+}
+
+function drawContain(ctx, img, x, y, w, h, align) {
+  if (!img) return;
+  const s = Math.min(mm(w) / img.width, mm(h) / img.height);
+  const dw = img.width * s, dh = img.height * s;
+  let dx = mm(x) + (mm(w) - dw) / 2;
+  if (align === 'left') dx = mm(x);
+  if (align === 'right') dx = mm(x) + mm(w) - dw;
+  ctx.drawImage(img, dx, mm(y) + (mm(h) - dh) / 2, dw, dh);
+}
+
+function renderPage(ctx, d) {
+  const W = mm(PW), H = mm(PH);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = 'top';
+
+  const T = (t, x, y, fs, o = {}) => {
+    ctx.font = FONT(fs, o.b);
+    ctx.fillStyle = o.c || '#111';
+    ctx.textAlign = o.a || 'left';
+    if (o.w) ctx.fillText(String(t), mm(x), mm(y), mm(o.w)); else ctx.fillText(String(t), mm(x), mm(y));
+  };
+  const R = (x, y, w, h, fill, stroke, lw) => {
+    if (fill) { ctx.fillStyle = fill; ctx.fillRect(mm(x), mm(y), mm(w), mm(h)); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = mm(lw || 0.2); ctx.strokeRect(mm(x), mm(y), mm(w), mm(h)); }
+  };
+  const Ln = (x1, y1, x2, y2, c, lw) => {
+    ctx.strokeStyle = c; ctx.lineWidth = mm(lw || 0.2);
+    ctx.beginPath(); ctx.moveTo(mm(x1), mm(y1)); ctx.lineTo(mm(x2), mm(y2)); ctx.stroke();
+  };
+
+  const X0 = 6, Y0 = 6, CW = 285;
+
+  /* ---------- Cabeçalho ---------- */
+  const LW = 62, LH = 16;
+  if (d.logo1) drawContain(ctx, d.logo1, X0, Y0, LW, LH, 'left');
+  else T('COPABO INFRA', X0, Y0 + 5, 4, { b: 1 });
+  if (d.logo2) drawContain(ctx, d.logo2, X0 + CW - LW, Y0, LW, LH, 'right');
+  else T('APS', X0 + CW, Y0 + 5, 4, { b: 1, a: 'right' });
+  const title = 'FOLHA DE INSPEÇÃO TÉCNICA DE SISTEMAS DE DEFENSAS';
+  let tfs = 4.4;
+  ctx.font = FONT(tfs, 1);
+  while (ctx.measureText(title).width > mm(CW - 2 * LW - 4) && tfs > 2.5) { tfs -= 0.1; ctx.font = FONT(tfs, 1); }
+  T(title, X0 + CW / 2, Y0 + (LH - tfs * 1.2) / 2, tfs, { b: 1, a: 'center' });
+  Ln(X0, Y0 + LH + 1.5, X0 + CW, Y0 + LH + 1.5, '#222', 0.45);
+
+  /* ---------- Metadados ---------- */
+  const my = 25.2, mh = 11.5, mg = 1, mw = (CW - 7 * mg) / 8;
+  d.meta.forEach((c, i) => {
+    const cx = X0 + i * (mw + mg);
+    R(cx, my, mw, mh, c.bg || null, '#888', 0.2);
+    T(c.l.toUpperCase(), cx + 1, my + 0.8, 1.9, { b: 1, c: '#555' });
+    const f = fitWrap(ctx, c.v, mw - 2, 2, 2.9, 1.8, false);
+    f.lines.forEach((ln, k) => T(ln, cx + 1, my + 3.5 + k * f.fs * 1.18, f.fs));
+  });
+
+  /* ---------- Bloco principal ---------- */
+  const mainY = 38.5, bottomY = 146, mainH = bottomY - 2 - mainY;
+  const leftW = 84, gap = 3, rightX = X0 + leftW + gap, rightW = CW - leftW - gap;
+
+  // Coluna esquerda: diagrama + observações
+  R(X0, mainY, leftW, mainH, '#fff', '#888', 0.2);
+  T('DIAGRAMA ESQUEMÁTICO', X0 + leftW / 2, mainY + 1.3, 2.6, { b: 1, c: '#123d59', a: 'center' });
+  Ln(X0 + 1, mainY + 5.2, X0 + leftW - 1, mainY + 5.2, '#ccc', 0.2);
+  let notesH = 0;
+  if (d.notes) {
+    const nf = fitWrap(ctx, 'Observações: ' + d.notes, leftW - 4, 8, 2.4, 1.8, false);
+    notesH = nf.lines.length * nf.fs * 1.2 + 2;
+    const ny = mainY + mainH - notesH - 1;
+    R(X0 + 1, ny, leftW - 2, notesH, '#fafafa', '#ccc', 0.15);
+    nf.lines.forEach((ln, k) => T(ln, X0 + 2, ny + 1 + k * nf.fs * 1.2, nf.fs));
+    notesH += 1.5;
+  }
+  const dY = mainY + 6, dH = mainH - 7 - notesH;
+  if (d.diagram) drawContain(ctx, d.diagram, X0 + 1, dY, leftW - 2, dH);
+  else T('Diagrama não cadastrado', X0 + leftW / 2, dY + dH / 2 - 1.5, 2.8, { c: '#777', a: 'center' });
+
+  // Coluna direita: tabela de componentes
+  const cols = [8, 67, 15, rightW - 8 - 67 - 15];
+  const layoutTable = fs => {
+    const lh = fs * 1.2, pad = 1.3;
+    const rows = d.rows.map(r => {
+      const dl = wrapLines(ctx, r.desc, FONT(fs), mm(cols[1] - 2));
+      const rl = wrapLines(ctx, r.res, FONT(fs), mm(cols[3] - 2));
+      return { dl, rl, h: Math.max(dl.length, rl.length, 1) * lh + pad };
+    });
+    const hdrH = 2 * lh + pad;
+    return { lh, pad, hdrH, rows, total: hdrH + rows.reduce((a, r) => a + r.h, 0) };
+  };
+  let fs = 2.6, Lt = layoutTable(fs);
+  while (Lt.total > mainH && fs > 1.4) { fs -= 0.05; Lt = layoutTable(fs); }
+
+  let ty = mainY, tx = rightX;
+  const heads = ['POS', 'DESCRIÇÃO', 'QTD. AVARIADA', 'RESULTADO DA INSPEÇÃO'];
+  const hfs = fs * 0.92;
+  let cxp = tx;
+  heads.forEach((h, i) => {
+    R(cxp, ty, cols[i], Lt.hdrH, '#eef2f5', '#888', 0.15);
+    const hl = wrapLines(ctx, h, FONT(hfs, 1), mm(cols[i] - 1));
+    const startY = ty + (Lt.hdrH - hl.length * Lt.lh) / 2 + 0.1;
+    hl.forEach((ln, k) => T(ln, i === 1 || i === 3 ? cxp + 1 : cxp + cols[i] / 2, startY + k * Lt.lh, hfs, { b: 1, a: i === 1 || i === 3 ? 'left' : 'center' }));
+    cxp += cols[i];
+  });
+  ty += Lt.hdrH;
+  d.rows.forEach((r, j) => {
+    const L = Lt.rows[j];
+    let cx = tx;
+    cols.forEach((w, i) => {
+      R(cx, ty, w, L.h, i === 3 && r.bg ? r.bg : null, '#888', 0.15);
+      cx += w;
+    });
+    const y0 = ty + Lt.pad / 2;
+    T(j + 1, tx + cols[0] / 2, y0, fs, { a: 'center' });
+    L.dl.forEach((ln, k) => T(ln, tx + cols[0] + 1, y0 + k * Lt.lh, fs));
+    T(r.q, tx + cols[0] + cols[1] + cols[2] / 2, y0, fs, { a: 'center' });
+    L.rl.forEach((ln, k) => T(ln, tx + cols[0] + cols[1] + cols[2] + 1, y0 + k * Lt.lh, fs));
+    ty += L.h;
+  });
+
+  /* ---------- Registro fotográfico ---------- */
+  T('REGISTRO FOTOGRÁFICO', X0, bottomY, 2.6, { b: 1, c: '#123d59' });
+  const pg = 3, pw = (CW - 3 * pg) / 4, py = bottomY + 3.6, ph = 30;
+  d.photos.forEach((p, j) => {
+    const px = X0 + j * (pw + pg);
+    R(px, py, pw, ph, '#fafafa', '#aaa', 0.2);
+    if (p.img) drawContain(ctx, p.img, px + 0.3, py + 0.3, pw - 0.6, ph - 0.6);
+    else T('Sem foto', px + pw / 2, py + ph / 2 - 1.3, 2.6, { c: '#777', a: 'center' });
+    T(`FOTO ${j + 1} — ${p.label}`, px, py + ph + 0.8, 2.2, { b: 1, w: pw });
+    if (p.meta) {
+      wrapLines(ctx, p.meta, FONT(1.9), mm(pw)).slice(0, 2).forEach((ln, k) => T(ln, px, py + ph + 3.5 + k * 2.3, 1.9, { c: '#222' }));
+    }
+  });
+
+  /* ---------- Assinaturas ---------- */
+  const sy = 189.2;
+  Ln(X0, sy, X0 + CW, sy, '#ccc', 0.2);
+  T(`Inspetor Copabo Infra: ${d.inspector}`, X0, sy + 1.2, 2.8);
+  if (d.sig) {
+    R(X0, sy + 4.3, 46, 10.8, '#fff', '#999', 0.2);
+    drawContain(ctx, d.sig, X0 + 0.8, sy + 5.0, 44.4, 9.4);
+  } else {
+    T('Assinatura digital não cadastrada', X0, sy + 5, 2.4, { c: '#777' });
+  }
+  T('Visto Fiscalização Cliente:', 105, sy + 9.5, 2.8);
+  Ln(139, sy + 12.6, 195, sy + 12.6, '#222', 0.2);
+  T(`Data: ${fmtISO(d.date)}`, X0 + CW, sy + 9.5, 2.8, { a: 'right' });
+}
+
+const canvasToJpegBytes = (c, q) => new Promise(res => {
+  c.toBlob(async b => {
+    if (b) return res(new Uint8Array(await b.arrayBuffer()));
+    const bin = atob(c.toDataURL('image/jpeg', q).split(',')[1]);
+    const u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    res(u);
+  }, 'image/jpeg', q);
+});
+
+function buildPdfBlob(pages) {
+  const enc = new TextEncoder();
+  const parts = [], offs = [];
+  let off = 0;
+  const push = b => { if (typeof b === 'string') b = enc.encode(b); parts.push(b); off += b.length; };
+  const obj = (id, fn) => { offs[id] = off; push(`${id} 0 obj\n`); fn(); push('\nendobj\n'); };
+  const n = pages.length;
+  push('%PDF-1.4\n%âãÏÓ\n');
+  obj(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2, () => push(`<< /Type /Pages /Kids [${pages.map((_, i) => `${3 + 3 * i} 0 R`).join(' ')}] /Count ${n} >>`));
+  pages.forEach((p, i) => {
+    const pg = 3 + 3 * i, ct = 4 + 3 * i, im = 5 + 3 * i;
+    const cs = 'q 841.89 0 0 595.28 0 0 cm /Im0 Do Q';
+    obj(pg, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 841.89 595.28] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${ct} 0 R >>`));
+    obj(ct, () => push(`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`));
+    obj(im, () => {
+      push(`<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.bytes.length} >>\nstream\n`);
+      push(p.bytes);
+      push('\nendstream');
+    });
+  });
+  const xref = off, total = 3 + 3 * n;
+  let x = `xref\n0 ${total}\n0000000000 65535 f \n`;
+  for (let i = 1; i < total; i++) x += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+  push(x + `trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts, { type: 'application/pdf' });
+}
+
+function showPdfBox(html) {
+  let b = document.getElementById('pdfBox');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'pdfBox';
+    b.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(10,25,35,.88);display:flex;align-items:center;justify-content:center;padding:20px';
+    document.body.appendChild(b);
+  }
+  b.innerHTML = `<div style="background:#fff;color:#172b38;border-radius:14px;padding:18px;max-width:420px;width:100%;text-align:center;font:15px/1.45 system-ui,-apple-system,Arial,sans-serif">${html}</div>`;
+  return b;
+}
+const closePdfBox = () => { const b = document.getElementById('pdfBox'); if (b) b.remove(); };
+let lastPdfUrl = null;
+
+function pdfDone(blob, name, nPages) {
+  if (lastPdfUrl) { try { URL.revokeObjectURL(lastPdfUrl); } catch (_) {} }
+  const url = lastPdfUrl = URL.createObjectURL(blob);
+  const file = new File([blob], name, { type: 'application/pdf' });
+  const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  const mb = (blob.size / 1048576).toFixed(1);
+  const box = showPdfBox(`<b style="font-size:17px">PDF pronto ✓</b>
+    <p class="muted" style="margin:6px 0 12px">${nPages} folha${nPages > 1 ? 's' : ''} A4 paisagem · ${mb} MB</p>
+    ${canShare ? '<button class="btn full" id="pdfShare">Compartilhar / Salvar em Arquivos</button>' : ''}
+    <button class="btn ${canShare ? 'secondary' : ''} full" style="margin-top:8px" id="pdfOpen">Abrir PDF</button>
+    <button class="btn secondary full" style="margin-top:8px" id="pdfDl">Baixar</button>
+    <button class="btn secondary full" style="margin-top:8px" id="pdfClose">Fechar</button>`);
+  const $ = id => box.querySelector('#' + id);
+  if (canShare) $('pdfShare').onclick = async () => {
+    try { await navigator.share({ files: [file], title: name }); }
+    catch (e) { if (e && e.name !== 'AbortError') alert('Não foi possível compartilhar: ' + (e.message || e)); }
+  };
+  $('pdfOpen').onclick = () => {
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  $('pdfDl').onclick = () => {
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  $('pdfClose').onclick = closePdfBox;
+}
+
+async function buildPrint(jobs) {
+  showPdfBox('<b>Gerando PDF…</b><p class="muted" id="pdfProg" style="margin:8px 0 0">Preparando…</p>');
+  const setProg = t => { const e = document.getElementById('pdfProg'); if (e) e.textContent = t; };
+  try {
+    const logo1 = await loadImg(await asset('logoCopabo'));
+    const logo2 = await loadImg(await asset('logoPorto'));
+    const { name: inspector, sig: sigData } = await getInspectorInfo();
+    const sig = await loadImg(sigData);
+    const contract = (settings.contractNumber || await get('settings', 'contractNumber') || 'SPA/12.2025').trim() || 'SPA/12.2025';
+    const diagCache = {};
+    const cv = document.createElement('canvas');
+    cv.width = mm(PW); cv.height = mm(PH);
+    const ctx = cv.getContext('2d');
+    const pages = [];
+
+    for (let n = 0; n < jobs.length; n++) {
+      setProg(`Página ${n + 1} de ${jobs.length}`);
+      await new Promise(r => setTimeout(r, 15)); // deixa a tela atualizar
+      const { si, id, v: raw } = jobs[n];
+      const v = normalizeRecord(raw);
+      const s = D[si];
+      const bInfo = BERCO_INFO[si] || { berco: s[0], sigla: '' };
+      const defLabel = bInfo.sigla ? `${id}-${bInfo.sigla}` : id;
+      const m = M[s[1]] || { i: [] };
+      const crit = CRIT_AUTO[v.condition] || '—';
+      const cbg = CRIT_BG[crit] || null;
+      if (s[1] && !(s[1] in diagCache)) diagCache[s[1]] = await loadImg(await asset('diagram_' + s[1]));
+      const rows = m.i.map((p, j) => {
+        const status = v.parts[j] || 'Não avaliado';
+        const note = v.partNotes[j] ? ` — ${String(v.partNotes[j]).slice(0, 70)}` : '';
+        const q0 = v.partQty && v.partQty[j];
+        return { desc: p[1], q: (q0 === undefined || q0 === null || q0 === '') ? '—' : String(q0), res: status + note, bg: PCOL[(v.partColors || {})[j]] || null };
+      });
+      const photos = [];
+      for (let j = 0; j < 4; j++) {
+        const pm = v.photoMeta[j];
+        photos.push({ img: await loadImg(v.photos[j]), label: L[j], meta: pm ? `${pm.date} · ${pm.location}` : '' });
+      }
+      renderPage(ctx, {
+        logo1, logo2, sig, inspector,
+        date: v.inspectionDate || '',
+        notes: v.notes || '',
+        diagram: s[1] ? diagCache[s[1]] : null,
+        rows, photos,
+        meta: [
+          { l: 'Contratante', v: 'Autoridade Portuária de Santos' },
+          { l: 'Berço', v: bInfo.berco },
+          { l: 'Defensa', v: defLabel },
+          { l: 'Contrato n°', v: contract },
+          { l: 'Data de inspeção', v: fmtISO(v.inspectionDate || '') },
+          { l: 'Condição', v: v.condition === 'Selecionar' ? '—' : v.condition, bg: cbg },
+          { l: 'Criticidade', v: crit, bg: cbg },
+          { l: 'Inspetor Copabo Infra', v: inspector }
+        ]
+      });
+      pages.push({ bytes: await canvasToJpegBytes(cv, 0.9), w: cv.width, h: cv.height });
+      photos.length = 0;
+    }
+
+    setProg('Montando o arquivo…');
+    await new Promise(r => setTimeout(r, 15));
+    const blob = buildPdfBlob(pages);
+    const today = isoLocal(new Date());
+    const clean = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const name = jobs.length === 1
+      ? `Defensa_${clean(D[jobs[0].si][0])}_${clean(jobs[0].id)}.pdf`
+      : `Relatorio_Defensas_${today}.pdf`;
+    pdfDone(blob, name, pages.length);
+  } catch (err) {
+    showPdfBox(`<b>Não foi possível gerar o PDF</b><p class="muted">${esc(err && err.message || err)}</p><p class="muted">Se foram muitas defensas de uma vez, gere por setor.</p><button class="btn full" id="pdfErrClose">Fechar</button>`)
+      .querySelector('#pdfErrClose').onclick = closePdfBox;
+  }
+}
+
+function fileData(f) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(f);
+  });
+}
+
+async function pdfToImage(file) {
+  if (!window.pdfjsLib) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = res;
+      s.onerror = () => rej(new Error('Sem conexão para carregar o leitor de PDF.'));
+      document.head.appendChild(s);
+    });
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const buf = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2.0 });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+  return canvas.toDataURL('image/png');
+}
+
+app.addEventListener('click', async e => {
+  const b = e.target.closest('[data-a]');
+  if (!b) return;
+  const a = b.dataset.a;
+  const si = Number(b.dataset.si);
+
+  if (a === 'home') home();
+  if (a === 'start') sectors();
+  if (a === 'sector') sector(si);
+  if (a === 'def') openDef(Number(b.dataset.si), b.dataset.id);
+  if (a === 'settings') settingsPage();
+  if (a === 'export') exportPage();
+  if (a === 'suggest') {
+    location.href = 'mailto:lorenzo.marchetti@copaboinfra.com.br,lorenzo.hayama@gmail.com?subject=' +
+      encodeURIComponent('Sugestão - Relatório de Defensas Copabo');
+  }
+  if (a === 'take') startLive(+b.dataset.j);
+  if (a === 'takesys') document.getElementById('photo' + b.dataset.j).click();
+  if (a === 'delphoto') {
+    current.v.photos[+b.dataset.j] = null;
+    current.v.photoMeta[+b.dataset.j] = null;
+    await put('records', key(current.si, current.id), current.v);
+    paintDef();
+  }
+  if (a === 'pal') openPalette(b, b.dataset.j);
+  if (a === 'reset') {
+    if (!confirm('Limpar TODAS as informações desta defensa (fotos, condição, observações, quantidades e cores)? Isso não pode ser desfeito.')) return;
+    current.v = blank();
+    await put('records', key(current.si, current.id), current.v);
+    paintDef();
+  }
+  if (a === 'save') {
+    await saveCurrent();
+    alert('Inspeção salva neste aparelho.');
+    sector(current.si);
+  }
+  if (a === 'pdfone') {
+    await saveCurrent();
+    // If not Hamilton and no custom signature, warn
+    const info = await getInspectorInfo();
+    if (info.name.toLowerCase() !== 'hamilton' && !(await asset('signatureCustom'))) {
+      const ok = confirm('O inspetor não é Hamilton e nenhuma assinatura personalizada foi cadastrada. Deseja gerar o PDF mesmo assim?');
+      if (!ok) return;
+    }
+    buildPrint([{ si: current.si, id: current.id, v: current.v }]);
+  }
+  if (a === 'add') {
+    const id = prompt('Número ou identificação da nova defensa:')?.trim();
+    if (!id) return;
+    if (list(current.si).some(x => x[0] === id)) {
+      alert('Já existe uma defensa com essa identificação neste setor.');
+      return;
+    }
+    const ex = { ...(settings.extra || {}) };
+    ex[current.si] = [...(ex[current.si] || []), id];
+    settings.extra = ex;
+    await put('settings', 'extra', ex);
+    // also clear from removed if it was there
+    if (settings.removed?.[current.si]) {
+      settings.removed[current.si] = settings.removed[current.si].filter(x => x !== id);
+      await put('settings', 'removed', settings.removed);
+    }
+    sector(current.si);
+  }
+  if (a === 'remove') {
+    if (!confirm('Remover esta defensa e os dados/fotos associados?')) return;
+    const si = current.si;
+    const id = current.id;
+    // mark as removed
+    settings.removed = settings.removed || {};
+    settings.removed[si] = settings.removed[si] || [];
+    if (!settings.removed[si].includes(id)) settings.removed[si].push(id);
+    await put('settings', 'removed', settings.removed);
+    // remove from extra if it was added manually
+    if (settings.extra?.[si]) {
+      settings.extra[si] = settings.extra[si].filter(x => x !== id);
+      await put('settings', 'extra', settings.extra);
+    }
+    // delete record
+    await del('records', key(si, id));
+    sector(si);
+  }
+  if (a === 'printall') {
+    const scope = document.getElementById('exportScope').value;
+    const inc = document.getElementById('incomplete').checked;
+    const jobs = [];
+    for (let i = 0; i < D.length; i++) {
+      if (scope !== 'all' && +scope !== i) continue;
+      for (const [id] of list(i)) {
+        const v = await get('records', key(i, id));
+        if (v && (inc || (v.photos || []).filter(Boolean).length === 4)) {
+          jobs.push({ si: i, id, v });
+        }
+      }
+    }
+    if (!jobs.length) return alert('Nenhuma inspeção atende ao filtro.');
+    const info = await getInspectorInfo();
+    if (info.name.toLowerCase() !== 'hamilton' && !(await asset('signatureCustom'))) {
+      const ok = confirm('O inspetor não é Hamilton e nenhuma assinatura personalizada foi cadastrada. Deseja gerar o PDF mesmo assim?');
+      if (!ok) return;
+    }
+    buildPrint(jobs);
+  }
+});
+
+app.addEventListener('change', async e => {
+  const t = e.target;
+  if (t.dataset.photo !== undefined) {
+    photoCapture(+t.dataset.photo, t.files[0]);
+    return;
+  }
+  if (t.dataset.asset) {
+    const f = t.files[0];
+    if (f) {
+      const data = await fileData(f);
+      await put('settings', t.dataset.asset, data);
+      loadPreviews();
+    }
+  }
+  if (t.dataset.diagram) {
+    const f = t.files[0];
+    if (f) {
+      try {
+        const isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+        const data = isPdf ? await pdfToImage(f) : await fileData(f);
+        await put('settings', 'diagram_' + t.dataset.diagram, data);
+        loadPreviews();
+      } catch (err) {
+        alert('Não foi possível ler o PDF (' + (err.message || 'erro desconhecido') + '). Tente enviar como imagem (PNG/JPG).');
+      }
+    }
+  }
+  if (t.dataset.part !== undefined) {
+    current.v.parts[t.dataset.part] = t.value;
+    await put('records', key(current.si, current.id), current.v);
+  }
+  if (t.id === 'condition' || t.id === 'inspectionDate' || t.id === 'criticality') {
+    current.v[t.id] = t.value;
+    if (t.id === 'condition') {
+      current.v.criticality = CRIT_AUTO[t.value] || 'Selecionar';
+      const ca = document.getElementById('critAuto');
+      if (ca) ca.innerHTML = 'Criticidade (automática): <b>' + (CRIT_AUTO[t.value] || '—') + '</b>';
+    }
+    await put('records', key(current.si, current.id), current.v);
+  }
+});
+
+app.addEventListener('input', async e => {
+  if (e.target.id === 'notes' && current.v) {
+    current.v.notes = e.target.value;
+    await put('records', key(current.si, current.id), current.v);
+  }
+  if (e.target.dataset.partnote !== undefined && current.v) {
+    current.v.partNotes = current.v.partNotes || {};
+    current.v.partNotes[e.target.dataset.partnote] = e.target.value.slice(0, 70);
+    await put('records', key(current.si, current.id), current.v);
+  }
+  if (e.target.dataset.partqty !== undefined && current.v) {
+    current.v.partQty = current.v.partQty || {};
+    current.v.partQty[e.target.dataset.partqty] = e.target.value;
+    await put('records', key(current.si, current.id), current.v);
+  }
+});
+
+openDB().catch(() => { noDB = true; }).then(async () => {
+  settings.extra = await get('settings', 'extra') || {};
+  settings.removed = await get('settings', 'removed') || {};
+  settings.order = await get('settings', 'order') || {};
+  settings.inspectorName = await get('settings', 'inspectorName') || 'Hamilton';
+  settings.contractNumber = await get('settings', 'contractNumber') || 'SPA/12.2025';
+  home();
+}).catch(e => {
+  app.innerHTML = 'Não foi possível abrir o armazenamento local deste navegador.';
+});
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
