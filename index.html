@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="theme-color" content="#123d59">
 <meta name="description" content="Sistema offline de inspeção de defensas Copabo Infra">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,6 +16,7 @@
 <style>
 :root{--navy:#123d59;--blue:#0879a8;--bg:#f2f5f7;--card:#fff;--ink:#172b38;--muted:#647582;--line:#d8e0e5;--green:#167346;--amber:#a76500;--red:#b42318}
 *{box-sizing:border-box}
+html,body{touch-action:pan-x pan-y;-webkit-touch-callout:none}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Arial,sans-serif}
 #app{max-width:850px;margin:auto;padding:16px}
 .head{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--navy);color:white;padding:15px;border-radius:14px;margin-bottom:16px}
@@ -47,6 +48,13 @@ textarea{min-height:75px}
 .row{border-top:1px solid var(--line);padding:10px 0}
 .topline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .hidden{display:none!important}
+.muted{overflow-wrap:anywhere}
+.card{overflow:hidden}
+input[type=date],input[type=time],input[type=datetime-local]{display:block;width:100%;max-width:100%;min-width:0;-webkit-appearance:none;appearance:none;text-align:center;min-height:44px;margin:0}
+input[type=date]::-webkit-date-and-time-value{text-align:center;min-width:0;margin:0}
+input[type=date]::-webkit-datetime-edit{padding:0}
+.sec-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:8px 0}
+.sec-actions .btn{width:100%;text-align:center;padding:11px 12px;font-size:14px}
 .foot{text-align:center;color:var(--muted);font-size:11px;padding:20px}
 .status{padding:9px;background:#e8f2f7;border-radius:8px;color:#17435b;font-size:13px}
 .setting-img{max-width:180px;max-height:80px;object-fit:contain;display:block;margin:8px 0}
@@ -65,7 +73,7 @@ textarea{min-height:75px}
   #app{
     width:100%;min-height:100vh;min-height:100dvh;max-width:850px;
     margin-inline:auto;display:flex;flex-direction:column;
-    justify-content:safe center;
+    justify-content:flex-start;
     padding: max(16px, env(safe-area-inset-top, 0px)) 14px max(20px, env(safe-area-inset-bottom, 0px));
   }
   #app>*{flex:0 0 auto}
@@ -401,12 +409,10 @@ async function sector(si) {
   const isCustom = !!(settings.customSectors || []).find(c => c.key === D[si][1] && c.name === D[si][0]);
   app.innerHTML = header() +
     `<div class="topline"><button class="btn secondary" data-a="start">‹ Setores</button><h2>${esc(D[si][0])}</h2></div>
-    <div class="actions" style="margin:8px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button class="btn danger" data-a="clearsec" data-si="${si}">🗑 Limpar informações do setor</button>
-        ${isCustom ? `<button class="btn danger" data-a="delsector" data-si="${si}">🗑 Excluir setor personalizado</button>` : ''}
-      </div>
-      <button class="btn rename" data-a="rensec" data-si="${si}" style="margin-left:auto;padding:8px 12px;font-size:13px">Renomear setor</button>
+    <div class="sec-actions">
+      <button class="btn danger" data-a="clearsec" data-si="${si}">🗑 Limpar informações do setor</button>
+      ${isCustom ? `<button class="btn danger" data-a="delsector" data-si="${si}">🗑 Excluir setor personalizado</button>` : ''}
+      <button class="btn rename" data-a="rensec" data-si="${si}">Renomear setor</button>
     </div>
     <input id="q" type="search" placeholder="🔍 Pesquisar defensa…" autocomplete="off" style="margin:4px 0 8px">
     <p class="muted" style="margin:0 0 8px">Segure e arraste pelo ícone ☰ para reordenar.</p>
@@ -603,7 +609,7 @@ function paintDef() {
   const items = (M[modelKey]?.i || []);
   app.innerHTML = header() +
     `<div class="topline"><button class="btn secondary" data-a="sector" data-si="${si}">‹ Setor</button><b>${esc(D[si][0])} · Defensa ${esc(id)}</b>
-      <button type="button" class="btn rename" data-a="rendef" style="margin-left:auto;padding:8px 12px;font-size:13px">Renomear defensa</button></div>
+      <button type="button" class="btn rename" data-a="rendef" style="flex:1 1 100%;width:100%;padding:11px 12px;font-size:14px">Renomear defensa</button></div>
     <div class="card">
       <label>Data de inspeção</label>
       <input type="date" id="inspectionDate" value="${esc(v.inspectionDate || '')}">
@@ -802,6 +808,16 @@ function drawShape(ctx, s, lw, selected) {
     }
     ctx.stroke();
     ctx.restore();
+    if (s.k === 'arrow') {
+      const rp = rotHandle(s, lw);
+      const mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2;
+      ctx.beginPath(); ctx.setLineDash([]); ctx.strokeStyle = '#ff9f1a'; ctx.lineWidth = Math.max(3, lw * .25);
+      ctx.moveTo(mx, my); ctx.lineTo(rp[0], rp[1]); ctx.stroke();
+      ctx.beginPath(); ctx.fillStyle = '#ff9f1a'; ctx.arc(rp[0], rp[1], Math.max(14, lw * 1.2), 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#000'; ctx.font = 'bold ' + Math.round(Math.max(16, lw * 1.5)) + 'px system-ui,Arial';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('\u21bb', rp[0], rp[1] + 1);
+    }
     if (s.k !== 'pen') {
       for (const [hx, hy] of [[s.x1, s.y1], [s.x2, s.y2]]) {
         ctx.beginPath();
@@ -816,8 +832,15 @@ function drawShape(ctx, s, lw, selected) {
   }
 }
 
-function hitShape(s, x, y, lw, wantHandle) {
-  const tol = Math.max(36, lw * 3.2);
+function rotHandle(s, lw) {
+  const mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2;
+  const dx = s.x2 - s.x1, dy = s.y2 - s.y1, len = Math.hypot(dx, dy) || 1;
+  const off = Math.max(lw * 4.5, 70);
+  return [mx + (-dy / len) * off, my + (dx / len) * off];
+}
+
+function hitShape(s, x, y, lw, wantHandle, tolPx) {
+  const tol = Math.max(36, lw * 3.2, tolPx || 0);
   if (s.k === 'circle') {
     const r = Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
     const d = Math.hypot(x - s.x1, y - s.y1);
@@ -836,8 +859,9 @@ function hitShape(s, x, y, lw, wantHandle) {
   }
   // seta / linha
   const x1 = s.x1, y1 = s.y1, x2 = s.x2, y2 = s.y2;
-  const ht = Math.max(28, lw * 2.5);
+  const ht = Math.max(28, lw * 2.5, tolPx || 0);
   if (wantHandle) {
+    if (s.k === 'arrow') { const rp = rotHandle(s, lw); if (Math.hypot(x - rp[0], y - rp[1]) < ht) return 'rot'; }
     if (Math.hypot(x - x1, y - y1) < ht) return 'h1';
     if (Math.hypot(x - x2, y - y2) < ht) return 'h2';
   }
@@ -946,42 +970,52 @@ function openEditor(src, info, j) {
   };
   render();
   const pt = e => { const r = cv.getBoundingClientRect(), k = W / r.width; return [(e.clientX - r.left) * k, (e.clientY - r.top) * k]; };
+  const kpx = () => W / cv.getBoundingClientRect().width;           // unidades do canvas por px de tela
+  const tolFor = e => (e.pointerType === 'mouse' ? 14 : 30) * kpx(); // área de toque generosa (em px de tela)
+  let activeId = null, startX = 0, startY = 0, rotOff = 0, hadSel = false;
   cv.addEventListener('pointerdown', e => {
     e.preventDefault();
+    if (activeId !== null) return;                 // ignora 2º dedo: não cria outra seta
+    activeId = e.pointerId;
     try { cv.setPointerCapture(e.pointerId); } catch (_) {}
-    const [x, y] = pt(e);
-    lastX = x; lastY = y;
+    const [x, y] = pt(e), tp = tolFor(e);
+    lastX = x; lastY = y; startX = x; startY = y;
     let hit = -1, handle = null;
-    // se já há seleção, prioriza handles da selecionada
+    hadSel = selected >= 0;
     if (selected >= 0 && shapes[selected]) {
-      const h0 = hitShape(shapes[selected], x, y, lw, true);
-      if (h0 === 'h1' || h0 === 'h2') { hit = selected; handle = h0; }
-      else if (h0) { hit = selected; handle = true; }
+      const h0 = hitShape(shapes[selected], x, y, lw, true, tp);
+      if (h0) { hit = selected; handle = h0; }
+      else if (hitShape(shapes[selected], x, y, lw, false, tp * 2.2)) { hit = selected; handle = true; } // quase acertou: mover a selecionada
     }
     if (hit < 0) {
       for (let i = shapes.length - 1; i >= 0; i--) {
-        const h = hitShape(shapes[i], x, y, lw, false);
+        const h = hitShape(shapes[i], x, y, lw, false, tp);
         if (h) { hit = i; handle = h; break; }
       }
     }
     if (hit >= 0) {
       selected = hit;
-      if (handle === 'h1') mode = 'h1';
-      else if (handle === 'h2') mode = 'h2';
-      else mode = 'move';
-      cur = null;
-      render();
-      return;
+      mode = handle === 'h1' ? 'h1' : handle === 'h2' ? 'h2' : handle === 'rot' ? 'rot' : 'move';
+      if (mode === 'rot') {
+        const a = shapes[selected], mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
+        rotOff = Math.atan2(a.y2 - a.y1, a.x2 - a.x1) - Math.atan2(y - my, x - mx);
+      }
+      cur = null; render(); return;
     }
     selected = -1;
     mode = 'draw';
-    cur = tool === 'pen' ? { k: 'pen', c: color, pts: [[x, y]] } : { k: tool, c: color, x1: x, y1: y, x2: x, y2: y };
+    cur = null;                                    // só cria a marca depois que o dedo realmente se arrastar
     render();
   });
   cv.addEventListener('pointermove', e => {
+    if (e.pointerId !== activeId || !mode) return;
     e.preventDefault();
     const [x, y] = pt(e);
-    if (mode === 'draw' && cur) {
+    if (mode === 'draw') {
+      if (!cur) {
+        if (Math.hypot(x - startX, y - startY) < 14 * kpx()) return;   // limiar de ~14 px de tela
+        cur = tool === 'pen' ? { k: 'pen', c: color, pts: [[startX, startY]] } : { k: tool, c: color, x1: startX, y1: startY, x2: x, y2: y };
+      }
       if (cur.k === 'pen') cur.pts.push([x, y]); else { cur.x2 = x; cur.y2 = y; }
       render();
       return;
@@ -994,13 +1028,22 @@ function openEditor(src, info, j) {
         else { s.x1 += dx; s.y1 += dy; s.x2 += dx; s.y2 += dy; }
       } else if (mode === 'h1') { s.x1 = x; s.y1 = y; }
       else if (mode === 'h2') { s.x2 = x; s.y2 = y; }
+      else if (mode === 'rot') {
+        const mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2, half = Math.hypot(s.x2 - s.x1, s.y2 - s.y1) / 2;
+        const an = Math.atan2(y - my, x - mx) + rotOff;
+        s.x1 = mx - Math.cos(an) * half; s.y1 = my - Math.sin(an) * half;
+        s.x2 = mx + Math.cos(an) * half; s.y2 = my + Math.sin(an) * half;
+      }
       lastX = x; lastY = y;
       render();
     }
   });
-  const end = () => {
+  const end = e => {
+    if (e && e.pointerId !== activeId) return;
+    activeId = null;
     if (mode === 'draw' && cur) {
-      if (cur.k === 'pen' ? (cur.pts && cur.pts.length > 1) : (Math.hypot(cur.x2 - cur.x1, cur.y2 - cur.y1) > 8)) {
+      const minLen = 20 * kpx();
+      if (cur.k === 'pen' ? (cur.pts && cur.pts.length > 2) : (Math.hypot(cur.x2 - cur.x1, cur.y2 - cur.y1) > minLen)) {
         shapes.push(cur);
         selected = shapes.length - 1;
       }
@@ -1011,6 +1054,17 @@ function openEditor(src, info, j) {
   };
   cv.addEventListener('pointerup', end);
   cv.addEventListener('pointercancel', end);
+  cv.addEventListener('pointermove', e => {       // cursor do mouse
+    if (mode || e.pointerType !== 'mouse') return;
+    const [x, y] = pt(e), tp = tolFor(e);
+    let c = 'crosshair';
+    if (selected >= 0 && shapes[selected]) {
+      const h = hitShape(shapes[selected], x, y, lw, true, tp);
+      c = h === 'rot' ? 'alias' : (h === 'h1' || h === 'h2') ? 'nwse-resize' : h ? 'move' : c;
+    }
+    if (c === 'crosshair') for (let i = shapes.length - 1; i >= 0; i--) if (hitShape(shapes[i], x, y, lw, false, tp)) { c = 'move'; break; }
+    cv.style.cursor = c;
+  });
   box.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { tool = b.dataset.tool; selected = -1; box.querySelectorAll('[data-tool]').forEach(x => x.classList.toggle('on', x === b)); render(); });
   box.querySelectorAll('[data-col]').forEach(b => b.onclick = () => {
     color = b.dataset.col;
@@ -1067,25 +1121,85 @@ async function startLive(j) {
   } catch (e) { return fallback(); }
   const box = document.createElement('div');
   box.id = 'cam';
-  box.innerHTML = `<video playsinline muted autoplay></video><div class="cam-info"></div>
-    <div class="cam-bar"><button class="btn secondary" id="camX">Cancelar</button><button id="camShot" aria-label="Capturar"></button><span style="width:84px"></span></div>`;
+  box.innerHTML = `<video playsinline muted autoplay></video><canvas id="camStamp" style="position:absolute;pointer-events:none"></canvas>
+    <div class="cam-bar"><button class="btn secondary" id="camX" style="min-width:96px">Cancelar</button><button id="camShot" aria-label="Capturar"></button><button class="btn secondary" id="camFlip" aria-label="Alternar câmera frontal/traseira" style="min-width:96px">⟲ Câmera</button></div>`;
   document.body.appendChild(box);
-  const vid = box.querySelector('video'), inf = box.querySelector('.cam-info');
+  const vid = box.querySelector('video'), stampCv = box.querySelector('#camStamp'), sctx = stampCv.getContext('2d');
+  const flipBtn = box.querySelector('#camFlip');
+  const label = `${D[current.si][0]} · Defensa ${current.id}`;
+  let facing = 'environment', closed = false, switching = false;
+  const readFacing = st => { try { const f = st.getVideoTracks()[0].getSettings().facingMode; if (f) facing = f; } catch (_) {} };
+  readFacing(stream);
   vid.srcObject = stream;
   try { await vid.play(); } catch (_) {}
-  const tick = () => {
-    const d = new Date(), p = geo.pos && geo.pos.coords;
-    inf.innerHTML = `<div class="c1"><span class="t">${fmtT(d)}</span>${WD[d.getDay()]}, ${fmtD(d)}</div>
-      <div class="c2">${esc(p ? (addrOf(p) || (navigator.onLine ? 'Buscando endereço…' : 'Endereço indisponível (sem internet)')) : 'Aguardando GPS…')}<br>${esc(D[current.si][0])} · Defensa ${esc(current.id)}</div>
-      <div class="c3">${p ? `Lat ${p.latitude.toFixed(6)}<br>Lon ${p.longitude.toFixed(6)}<br>±${Math.round(p.accuracy)} m` : 'Localização<br>não disponível'}</div>`;
+
+  // Carimbo ao vivo: mesmo desenho da foto final (paisagem = faixa em 3 colunas; retrato = quadro compacto),
+  // posicionado exatamente sobre a área visível do vídeo e refeito a cada giro/redimensionamento.
+  const paintStamp = () => {
+    const vw = vid.videoWidth, vh = vid.videoHeight;
+    if (!vw || !vh) return;
+    const cw = vid.clientWidth, ch = vid.clientHeight, k = Math.min(cw / vw, ch / vh), dw = vw * k, dh = vh * k;
+    stampCv.style.left = (vid.offsetLeft + (cw - dw) / 2) + 'px';
+    stampCv.style.top = (vid.offsetTop + (ch - dh) / 2) + 'px';
+    stampCv.style.width = dw + 'px'; stampCv.style.height = dh + 'px';
+    const q = Math.min(1, 1280 / Math.max(vw, vh)), W = Math.round(vw * q), H = Math.round(vh * q);
+    if (stampCv.width !== W || stampCv.height !== H) { stampCv.width = W; stampCv.height = H; }
+    sctx.clearRect(0, 0, W, H);
+    const p = geo.pos && geo.pos.coords;
+    const addr = p ? (addrOf(p) || (navigator.onLine ? 'Buscando endereço…' : 'Endereço indisponível (sem internet)')) : 'Aguardando GPS…';
+    drawStamp(sctx, W, H, { now: new Date(), pos: geo.pos, addr }, label);
   };
-  tick();
-  const iv = setInterval(tick, 1000);
-  startGeo(tick);
-  const close = () => { clearInterval(iv); stream.getTracks().forEach(t => t.stop()); stopGeo(); box.remove(); };
+  paintStamp();
+  const iv = setInterval(paintStamp, 1000);
+  vid.addEventListener('resize', paintStamp);
+  vid.addEventListener('loadedmetadata', paintStamp);
+  window.addEventListener('orientationchange', paintStamp);
+  window.addEventListener('resize', paintStamp);
+  let ro = null;
+  if (window.ResizeObserver) { ro = new ResizeObserver(paintStamp); ro.observe(vid); }
+  startGeo(paintStamp);
+  const close = () => {
+    closed = true; clearInterval(iv);
+    window.removeEventListener('orientationchange', paintStamp); window.removeEventListener('resize', paintStamp);
+    if (ro) ro.disconnect();
+    stream.getTracks().forEach(t => t.stop()); stopGeo(); box.remove();
+  };
+
+  // Alternar câmera frontal/traseira
+  if (navigator.mediaDevices.enumerateDevices) {
+    navigator.mediaDevices.enumerateDevices().then(l => { if (l.filter(d => d.kind === 'videoinput').length < 2) flipBtn.style.visibility = 'hidden'; }).catch(() => {});
+  }
+  const tryStream = async vc => { try { return await navigator.mediaDevices.getUserMedia({ video: vc, audio: false }); } catch (_) { return null; } };
+  const size = { width: { ideal: 2560 }, height: { ideal: 1440 } };
+  flipBtn.onclick = async () => {
+    if (switching) return;
+    switching = true; flipBtn.disabled = true;
+    const next = facing === 'user' ? 'environment' : 'user';
+    let curId = '';
+    try { curId = stream.getVideoTracks()[0].getSettings().deviceId || ''; } catch (_) {}
+    stream.getTracks().forEach(t => t.stop());       // celulares só abrem uma câmera por vez
+    let ns = await tryStream({ ...size, facingMode: { exact: next } });
+    if (!ns) {
+      try {
+        const list = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+        const i = list.findIndex(d => d.deviceId === curId), other = list.length > 1 ? list[(i + 1) % list.length] : null;
+        if (other) ns = await tryStream({ ...size, deviceId: { exact: other.deviceId } });
+      } catch (_) {}
+    }
+    const ok = !!ns;
+    if (!ns) ns = await tryStream({ ...size, facingMode: { ideal: facing } });   // volta à câmera anterior
+    if (closed) { if (ns) ns.getTracks().forEach(t => t.stop()); return; }
+    if (!ns) { alert('Não foi possível reabrir a câmera.'); close(); return; }
+    stream = ns; vid.srcObject = ns;
+    if (ok) { facing = next; readFacing(ns); } else alert('Este aparelho não permitiu trocar de câmera.');
+    try { await vid.play(); } catch (_) {}
+    paintStamp();
+    switching = false; flipBtn.disabled = false;
+  };
+
   box.querySelector('#camX').onclick = close;
   box.querySelector('#camShot').onclick = () => {
-    if (!vid.videoWidth) return;
+    if (!vid.videoWidth || switching) return;
     const now = new Date(), c = document.createElement('canvas');
     c.width = vid.videoWidth; c.height = vid.videoHeight;
     c.getContext('2d').drawImage(vid, 0, 0);
@@ -2161,6 +2275,22 @@ openDB().catch(() => { noDB = true; }).then(async () => {
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
+</script>
+<script>
+/* Bloqueio de zoom por gesto de pinça e toque duplo (iOS ignora user-scalable=no) */
+(function(){
+  const stop = e => e.preventDefault();
+  ['gesturestart','gesturechange','gestureend'].forEach(t => document.addEventListener(t, stop, { passive: false }));
+  document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+  let lastEnd = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastEnd < 350 && !e.target.closest('button,a,input,select,textarea,label,summary,.item,.handle,[data-a],canvas,video')) e.preventDefault();
+    lastEnd = now;
+  }, { passive: false });
+  document.addEventListener('dblclick', e => { if (!e.target.closest('input,textarea,select')) e.preventDefault(); }, { passive: false });
+})();
 </script>
 </body>
 </html>
