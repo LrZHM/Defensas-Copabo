@@ -156,7 +156,13 @@ body.reordering{overflow:hidden;touch-action:none}
   .stamp{font-size:9px;color:#333}
 }
 
-.stock-wrap{display:inline-flex;align-items:center;gap:3px}.stock-edit{border:0;background:transparent;color:#53616a;border-radius:5px;padding:3px 5px;font-size:13px;cursor:pointer;opacity:.35}.stock-wrap:hover .stock-edit,.stock-wrap:focus-within .stock-edit{opacity:1}.stock-edit:active{background:#e8edf0}.remove-confirm-btn:hover,.remove-confirm-btn:active{background:#b42318!important;color:#fff!important;border-color:#991b1b!important}
+.stock-wrap{display:inline-flex;align-items:center;gap:3px;min-width:0}.stock-wrap input.qty{width:100%;min-width:0}.stock-edit{flex:0 0 auto;border:0;background:transparent;color:#53616a;border-radius:7px;padding:7px 9px;font-size:16px;line-height:1;cursor:pointer;opacity:.7;touch-action:manipulation;user-select:none;-webkit-user-select:none}.stock-wrap:hover .stock-edit,.stock-wrap:focus-within .stock-edit{opacity:1}.stock-edit:active{background:#e8edf0}.stock-wrap.is-editing{background:#eef7fb;border-radius:8px;padding:2px}.stock-wrap.is-editing input.qty{border-color:var(--blue);background:#fff}.remove-confirm-btn:hover,.remove-confirm-btn:active{background:#b42318!important;color:#fff!important;border-color:#991b1b!important}
+
+.export-incomplete{display:grid!important;grid-template-columns:24px minmax(0,1fr);align-items:start;gap:12px;margin:18px 0 22px!important;line-height:1.35;min-width:0}
+.export-incomplete input{width:20px!important;height:20px;margin:3px 0 0!important;flex:0 0 auto}
+.export-incomplete span{display:block;min-width:0;overflow-wrap:anywhere}
+.export-help{margin:0 0 18px!important;line-height:1.4}
+.material-model{margin:8px 0 14px!important;line-height:1.35;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -410,9 +416,9 @@ async function sector(si) {
   app.innerHTML = header() +
     `<div class="topline"><button class="btn secondary" data-a="start">‹ Setores</button><h2>${esc(D[si][0])}</h2></div>
     <div class="sec-actions">
+      <button class="btn rename" data-a="rensec" data-si="${si}">Renomear setor</button>
       <button class="btn danger" data-a="clearsec" data-si="${si}">🗑 Limpar informações do setor</button>
       ${isCustom ? `<button class="btn danger" data-a="delsector" data-si="${si}">🗑 Excluir setor personalizado</button>` : ''}
-      <button class="btn rename" data-a="rensec" data-si="${si}">Renomear setor</button>
     </div>
     <input id="q" type="search" placeholder="🔍 Pesquisar defensa…" autocomplete="off" style="margin:4px 0 8px">
     <p class="muted" style="margin:0 0 8px">Segure e arraste pelo ícone ☰ para reordenar.</p>
@@ -629,7 +635,7 @@ function paintDef() {
     ).join('')}</div>
     <div class="card">
       <h2>Componentes / materiais</h2>
-      <p class="muted">${esc(modelKey || 'Modelo não definido')}</p>
+      <p class="muted material-model">${modelKey ? `Modelo: ${esc(modelKey)}` : 'Modelo não definido'}</p>
       <div class="actions" style="margin:8px 0 10px">
         <button type="button" class="btn secondary" data-a="rmmatsel">Remover materiais</button>
       </div>
@@ -859,9 +865,13 @@ function hitShape(s, x, y, lw, wantHandle, tolPx) {
   }
   // seta / linha
   const x1 = s.x1, y1 = s.y1, x2 = s.x2, y2 = s.y2;
-  const ht = Math.max(28, lw * 2.5, tolPx || 0);
+  const ht = Math.max(34, lw * 3.2, tolPx || 0);
   if (wantHandle) {
-    if (s.k === 'arrow') { const rp = rotHandle(s, lw); if (Math.hypot(x - rp[0], y - rp[1]) < ht) return 'rot'; }
+    if (s.k === 'arrow') {
+      const rp = rotHandle(s, lw);
+      const rotateHit = Math.max(ht, tolPx ? tolPx * 1.65 : 0, 58);
+      if (Math.hypot(x - rp[0], y - rp[1]) < rotateHit) return 'rot';
+    }
     if (Math.hypot(x - x1, y - y1) < ht) return 'h1';
     if (Math.hypot(x - x2, y - y2) < ht) return 'h2';
   }
@@ -879,65 +889,78 @@ function hitShape(s, x, y, lw, wantHandle, tolPx) {
 
 function drawStamp(ctx, W, H, info, label) {
   const d = info.now, p = info.pos && info.pos.coords, land = W >= H * 1.15;
-  const u = Math.max(13, Math.round(Math.min(W, H) / (land ? 40 : 40))), pd = Math.round(u * .75);
-  const F = (s, bold) => `${bold ? 'bold ' : ''}${Math.round(s)}px system-ui,Arial,sans-serif`;
-  const mwid = (t, f) => { ctx.font = f; return ctx.measureText(t).width; };
-  const wrap = (t, font, mw) => {
+  const u = Math.max(12, Math.round(Math.min(W, H) / 42)), pd = Math.round(u * .72);
+  const F = (size, bold = false) => `${bold ? 'bold ' : ''}${Math.round(size)}px system-ui,Arial,sans-serif`;
+  const wrap = (text, font, maxWidth, maxLines = 5) => {
     ctx.font = font;
+    const words = String(text || '').split(/\s+/).filter(Boolean);
     const out = []; let line = '';
-    for (const w of String(t).split(/\s+/)) {
-      const tt = line ? line + ' ' + w : w;
-      if (ctx.measureText(tt).width > mw && line) { out.push(line); line = w; } else line = tt;
+    for (const word of words) {
+      const candidate = line ? `${line} ${word}` : word;
+      if (ctx.measureText(candidate).width <= maxWidth || !line) line = candidate;
+      else { out.push(line); line = word; }
     }
     if (line) out.push(line);
+    if (out.length > maxLines) {
+      out.length = maxLines;
+      let last = out[maxLines - 1];
+      while (last.length && ctx.measureText(last + '…').width > maxWidth) last = last.slice(0, -1);
+      out[maxLines - 1] = last + '…';
+    }
     return out;
   };
-  const rr = (x, y, w, hh, r0) => {
-    ctx.beginPath();
-    ctx.moveTo(x + r0, y); ctx.arcTo(x + w, y, x + w, y + hh, r0); ctx.arcTo(x + w, y + hh, x, y + hh, r0);
-    ctx.arcTo(x, y + hh, x, y, r0); ctx.arcTo(x, y, x + w, y, r0); ctx.closePath();
+  const rr = (x, y, w, h, r) => {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
   };
-  const timeT = fmtT(d), dateT = `${WD[d.getDay()]}, ${fmtD(d)}`, addr = info.addr || 'Endereço indisponível';
-  const coords = p ? [`Lat ${p.latitude.toFixed(6)}`, `Lon ${p.longitude.toFixed(6)}`, `±${Math.round(p.accuracy)} m`] : ['Localização', 'não disponível'];
-  ctx.save();
-  // Paisagem: faixa horizontal em 3 colunas (hora/data | endereço | coordenadas)
-  const bx = Math.round(u * .8), bw = W - 2 * bx;
-  const c1 = Math.max(mwid(timeT, F(u * 2.3, 1)), mwid(dateT, F(u, 1)));
-  const c3 = Math.max(...coords.map(t => mwid(t, F(u * .95))));
-  const gap = pd * 1.6, c2 = bw - 2 * pd - c1 - c3 - 2 * gap;
-  if (land && c2 > u * 8) {
-    const al = wrap(addr, F(u * .95), c2).slice(0, 3), lh = 1.15 * u;
-    const bh = Math.max(3.8 * u, (al.length + 1) * lh, coords.length * lh) + 2 * pd, by = Math.round(H - bh - u * .8);
-    ctx.fillStyle = 'rgba(0,0,0,.5)'; rr(bx, by, bw, bh, u * .6); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.textBaseline = 'top'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = u * .15;
-    const x1 = bx + pd, x2 = x1 + c1 + gap, x3 = x2 + c2 + gap, y0 = by + pd;
-    ctx.font = F(u * 2.3, 1); ctx.fillText(timeT, x1, y0);
-    ctx.font = F(u, 1); ctx.fillText(dateT, x1, y0 + 2.5 * u);
-    ctx.font = F(u * .95);
-    al.forEach((t, k) => ctx.fillText(t, x2, y0 + k * lh));
-    ctx.fillText(label, x2, y0 + al.length * lh, c2);
-    coords.forEach((t, k) => ctx.fillText(t, x3, y0 + k * lh));
+  const timeT = fmtT(d), dateT = `${WD[d.getDay()]}, ${fmtD(d)}`;
+  const addr = info.addr || 'Endereço indisponível';
+  const coords = p ? [`Lat ${p.latitude.toFixed(6)}`, `Lon ${p.longitude.toFixed(6)}`, `Precisão ±${Math.round(p.accuracy)} m`] : ['Localização não disponível'];
+  ctx.save(); ctx.textBaseline = 'top'; ctx.fillStyle = '#fff';
+  ctx.shadowColor = 'rgba(0,0,0,.65)'; ctx.shadowBlur = u * .18;
+
+  if (land) {
+    const margin = Math.max(10, Math.round(u * .8)), bx = margin, bw = W - margin * 2;
+    const innerW = bw - pd * 2, gap = Math.max(10, Math.round(u * .8));
+    const leftW = Math.max(u * 7, innerW * .23), rightW = Math.max(u * 7, innerW * .25);
+    const midW = Math.max(u * 8, innerW - leftW - rightW - gap * 2);
+    const x1 = bx + pd, x2 = x1 + leftW + gap, x3 = x2 + midW + gap;
+    const small = Math.max(11, u * .88), lineH = small * 1.22;
+    const addrLines = wrap(addr, F(small), midW, 3);
+    const labelLines = wrap(label, F(small, true), midW, 2);
+    const left = [[timeT, F(u * 2.05, true), u * 2.25], [dateT, F(small, true), lineH]];
+    const middle = [...addrLines.map(t => [t, F(small), lineH]), ...labelLines.map(t => [t, F(small, true), lineH])];
+    const right = coords.map(t => [t, F(small), lineH]);
+    const contentH = Math.max(left.reduce((n, r) => n + r[2], 0), middle.length * lineH, right.length * lineH);
+    const bh = contentH + pd * 2, by = Math.max(margin, H - bh - margin);
+    ctx.fillStyle = 'rgba(0,0,0,.56)'; rr(bx, by, bw, bh, u * .55); ctx.fill(); ctx.fillStyle = '#fff';
+    let yy = by + pd;
+    left.forEach(([t, font, h]) => { ctx.font = font; ctx.fillText(t, x1, yy, leftW); yy += h; });
+    yy = by + pd;
+    middle.forEach(([t, font, h]) => { ctx.font = font; ctx.fillText(t, x2, yy, midW); yy += h; });
+    yy = by + pd;
+    right.forEach(([t, font, h]) => { ctx.font = font; ctx.fillText(t, x3, yy, rightW); yy += h; });
     ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = Math.max(1, u * .06);
-    [x2 - gap / 2, x3 - gap / 2].forEach(xx => { ctx.beginPath(); ctx.moveTo(xx, by + pd * .8); ctx.lineTo(xx, by + bh - pd * .8); ctx.stroke(); });
+    [x2 - gap / 2, x3 - gap / 2].forEach(xx => { ctx.beginPath(); ctx.moveTo(xx, by + pd * .65); ctx.lineTo(xx, by + bh - pd * .65); ctx.stroke(); });
   } else {
-    // Retrato: quadro compacto no canto inferior esquerdo
-    const maxW = Math.round(W * .5);
-    const rows = [[timeT, F(u * 2.3, 1), u * 2.5], [dateT, F(u, 1), u * 1.3]];
-    wrap(addr, F(u * .9), maxW - 2 * pd).slice(0, 3).forEach(t => rows.push([t, F(u * .9), u * 1.12]));
-    rows.push([p ? `Lat ${p.latitude.toFixed(6)} · Lon ${p.longitude.toFixed(6)} · ±${Math.round(p.accuracy)} m` : 'Localização não disponível', F(u * .9), u * 1.12]);
-    rows.push([label, F(u * .9), u * 1.12]);
-    let w = 0;
-    rows.forEach(r => { ctx.font = r[1]; w = Math.max(w, ctx.measureText(r[0]).width); });
-    const qw = Math.min(w, maxW - 2 * pd) + 2 * pd, qh = rows.reduce((a2, r) => a2 + r[2], 0) + 2 * pd;
-    const x = Math.round(u * .8), y = Math.round(H - qh - u * .8);
-    ctx.fillStyle = 'rgba(0,0,0,.5)'; rr(x, y, qw, qh, u * .6); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.textBaseline = 'top'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = u * .15;
+    const boxW = Math.max(120, Math.round(W * .62)), inner = boxW - pd * 2;
+    const small = Math.max(11, u * .88), lineH = small * 1.2;
+    const rows = [
+      { lines: [timeT], font: F(u * 2.05, true), h: u * 2.25 },
+      { lines: [dateT], font: F(small, true), h: lineH },
+      { lines: wrap(addr, F(small), inner, 3), font: F(small), h: lineH },
+      { lines: wrap(p ? coords.join(' · ') : coords[0], F(small), inner, 2), font: F(small), h: lineH },
+      { lines: wrap(label, F(small, true), inner, 2), font: F(small, true), h: lineH }
+    ];
+    const contentH = rows.reduce((n, r) => n + r.lines.length * r.h, 0);
+    const boxH = contentH + pd * 2, x = Math.round(u * .8), y = Math.max(u * .5, H - boxH - u * .8);
+    ctx.fillStyle = 'rgba(0,0,0,.56)'; rr(x, y, boxW, boxH, u * .55); ctx.fill(); ctx.fillStyle = '#fff';
     let cy = y + pd;
-    rows.forEach(r => { ctx.font = r[1]; ctx.fillText(r[0], x + pd, cy, qw - 2 * pd); cy += r[2]; });
+    rows.forEach(r => { ctx.font = r.font; r.lines.forEach(line => { ctx.fillText(line, x + pd, cy, inner); cy += r.h; }); });
   }
   ctx.restore();
 }
-
 function openEditor(src, info, j) {
   const { si, id } = current;
   const sc = Math.min(1, 2200 / Math.max(src.width, src.height));
@@ -969,10 +992,14 @@ function openEditor(src, info, j) {
     drawStamp(ctx, W, H, info, label);
   };
   render();
-  const pt = e => { const r = cv.getBoundingClientRect(), k = W / r.width; return [(e.clientX - r.left) * k, (e.clientY - r.top) * k]; };
-  const kpx = () => W / cv.getBoundingClientRect().width;           // unidades do canvas por px de tela
+  const canvasMetrics = () => {
+    const r = cv.getBoundingClientRect(), scale = Math.min(r.width / W, r.height / H);
+    return { r, scale, left: r.left + (r.width - W * scale) / 2, top: r.top + (r.height - H * scale) / 2 };
+  };
+  const pt = e => { const m = canvasMetrics(); return [(e.clientX - m.left) / m.scale, (e.clientY - m.top) / m.scale]; };
+  const kpx = () => 1 / canvasMetrics().scale;
   const tolFor = e => (e.pointerType === 'mouse' ? 14 : 30) * kpx(); // área de toque generosa (em px de tela)
-  let activeId = null, startX = 0, startY = 0, rotOff = 0, hadSel = false;
+  let activeId = null, startX = 0, startY = 0, lastRotAngle = 0, hadSel = false;
   cv.addEventListener('pointerdown', e => {
     e.preventDefault();
     if (activeId !== null) return;                 // ignora 2º dedo: não cria outra seta
@@ -998,7 +1025,7 @@ function openEditor(src, info, j) {
       mode = handle === 'h1' ? 'h1' : handle === 'h2' ? 'h2' : handle === 'rot' ? 'rot' : 'move';
       if (mode === 'rot') {
         const a = shapes[selected], mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
-        rotOff = Math.atan2(a.y2 - a.y1, a.x2 - a.x1) - Math.atan2(y - my, x - mx);
+        lastRotAngle = Math.atan2(y - my, x - mx);
       }
       cur = null; render(); return;
     }
@@ -1029,10 +1056,17 @@ function openEditor(src, info, j) {
       } else if (mode === 'h1') { s.x1 = x; s.y1 = y; }
       else if (mode === 'h2') { s.x2 = x; s.y2 = y; }
       else if (mode === 'rot') {
-        const mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2, half = Math.hypot(s.x2 - s.x1, s.y2 - s.y1) / 2;
-        const an = Math.atan2(y - my, x - mx) + rotOff;
-        s.x1 = mx - Math.cos(an) * half; s.y1 = my - Math.sin(an) * half;
-        s.x2 = mx + Math.cos(an) * half; s.y2 = my + Math.sin(an) * half;
+        const mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2;
+        const nowAngle = Math.atan2(y - my, x - mx);
+        let delta = nowAngle - lastRotAngle;
+        while (delta > Math.PI) delta -= Math.PI * 2;
+        while (delta < -Math.PI) delta += Math.PI * 2;
+        const dx0 = s.x2 - mx, dy0 = s.y2 - my;
+        const c = Math.cos(delta), sn = Math.sin(delta);
+        const dx = dx0 * c - dy0 * sn, dy = dx0 * sn + dy0 * c;
+        s.x1 = mx - dx; s.y1 = my - dy;
+        s.x2 = mx + dx; s.y2 = my + dy;
+        lastRotAngle = nowAngle;
       }
       lastX = x; lastY = y;
       render();
@@ -1298,8 +1332,8 @@ async function exportPage() {
         <option value="all">Todos os setores</option>
         ${D.map((s, i) => `<option value="${i}">${esc(s[0])}</option>`).join('')}
       </select>
-      <label style="margin-top:12px"><input type="checkbox" id="incomplete" style="width:auto"> Incluir inspeções com menos de três fotos</label>
-      <p class="muted">O PDF é gerado direto no aparelho (uma folha A4 paisagem por defensa). Ao terminar, use “Compartilhar / Salvar” ou “Abrir PDF”.</p>
+      <label class="export-incomplete"><input type="checkbox" id="incomplete"> <span>Incluir inspeções com menos de três fotos</span></label>
+      <p class="muted export-help">O PDF é gerado direto no aparelho (uma folha A4 paisagem por defensa). Ao terminar, use “Compartilhar / Salvar” ou “Abrir PDF”.</p>
       <button class="btn full" data-a="printall">Gerar PDF</button>
     </div>`;
 }
@@ -1777,8 +1811,14 @@ app.addEventListener('click', async e => {
     paintDef();
   }
   if (b.dataset.editstock !== undefined) {
+    e.preventDefault(); e.stopPropagation();
     const input = app.querySelector(`[data-stockqty="${CSS.escape(b.dataset.editstock)}"]`);
-    if (input) { input.readOnly = false; input.focus(); input.select(); }
+    const wrap = b.closest('.stock-wrap');
+    if (input && input.readOnly) {
+      input.readOnly = false; wrap?.classList.add('is-editing');
+      b.textContent = '✓'; b.title = 'Concluir edição'; b.setAttribute('aria-label', 'Concluir edição');
+      input.focus(); try { input.select(); } catch (_) {}
+    } else if (input) input.blur();
     return;
   }
   if (a === 'rmmatsel') {
@@ -1938,11 +1978,29 @@ app.addEventListener('click', async e => {
   }
 });
 
+app.addEventListener('pointerdown', e => {
+  if (e.target.closest('[data-stockqty], [data-editstock]')) e.stopPropagation();
+}, true);
+app.addEventListener('click', e => {
+  if (e.target.closest('[data-stockqty], [data-editstock]')) e.stopPropagation();
+}, true);
+
 app.addEventListener('change', async e => {
   const t = e.target;
   if (t.dataset.stockqty !== undefined && current.v) {
     const value = t.value.trim();
-    if (value !== '' && /^[0-9]+$/.test(value)) t.readOnly = true;
+    if (value === '' || /^[0-9]+$/.test(value)) {
+      current.v.partStockQty = current.v.partStockQty || {};
+      current.v.partStockQty[t.dataset.stockqty] = value;
+      await put('records', key(current.si, current.id), current.v);
+    } else {
+      t.value = current.v.partStockQty[t.dataset.stockqty] ?? '';
+      alert('Informe uma quantidade inteira válida.');
+    }
+    t.readOnly = true;
+    const wrap = t.closest('.stock-wrap'); wrap?.classList.remove('is-editing');
+    const pencil = wrap?.querySelector('[data-editstock]');
+    if (pencil) { pencil.textContent = '✎'; pencil.title = 'Editar quantidade fixa'; pencil.setAttribute('aria-label', 'Editar quantidade fixa'); }
   }
   if (t.dataset.photo !== undefined) {
     photoCapture(+t.dataset.photo, t.files[0]);
@@ -1990,6 +2048,17 @@ app.addEventListener('change', async e => {
     current.v.noQuantity = !!t.checked;
     await put('records', key(current.si, current.id), current.v);
     paintDef();
+  }
+});
+
+app.addEventListener('keydown', e => {
+  const input = e.target.closest('[data-stockqty]');
+  if (!input || input.readOnly) return;
+  if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    input.value = current.v?.partStockQty?.[input.dataset.stockqty] ?? '';
+    input.blur();
   }
 });
 
