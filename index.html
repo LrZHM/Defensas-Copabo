@@ -2,17 +2,17 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="theme-color" content="#123d59">
 <meta name="description" content="Sistema offline de inspeção de defensas Copabo Infra">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Defensas Copabo">
+<meta name="apple-mobile-web-app-title" content="CopaboInfra Inspeção Defensas">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<title>Inspeção de Defensas | Copabo Infra</title>
+<title>CopaboInfra Inspeção Defensas</title>
 <style>
 :root{--navy:#123d59;--blue:#0879a8;--bg:#f2f5f7;--card:#fff;--ink:#172b38;--muted:#647582;--line:#d8e0e5;--green:#167346;--amber:#a76500;--red:#b42318}
 *{box-sizing:border-box}
@@ -27,6 +27,7 @@ h2{font-size:18px;margin:8px 0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
 .btn{border:0;border-radius:9px;background:var(--blue);color:white;padding:11px 15px;font:600 14px system-ui;cursor:pointer}
 .btn.secondary{background:white;color:var(--ink);border:1px solid var(--line)}
+.btn.rename{background:#555f66;color:#fff;border:1px solid #41494f}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:1200;display:grid;place-items:center;padding:18px}.modal{background:#fff;border-radius:14px;padding:18px;width:min(480px,100%);max-height:80vh;overflow:auto;box-shadow:0 12px 36px rgba(0,0,0,.3)}.modal-list{display:grid;gap:8px;margin:12px 0}.modal-list label{display:flex;align-items:center;gap:9px;margin:0;color:var(--ink)}.modal-list input{width:18px;height:18px}
 .btn.danger{background:#fff1f0;color:var(--red);border:1px solid #f2c4c0}
 .btn.full{width:100%}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
@@ -35,7 +36,7 @@ h2{font-size:18px;margin:8px 0}
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px}
 input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink);font:inherit}
 textarea{min-height:75px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .photo{border:1px dashed #9aabb7;border-radius:10px;padding:8px;background:white}
 .photo img{width:100%;height:150px;object-fit:contain;background:#eef2f4;border-radius:6px}
 .photo button{margin-top:6px}
@@ -50,7 +51,7 @@ textarea{min-height:75px}
 .status{padding:9px;background:#e8f2f7;border-radius:8px;color:#17435b;font-size:13px}
 .setting-img{max-width:180px;max-height:80px;object-fit:contain;display:block;margin:8px 0}
 .component{border-top:1px solid var(--line);padding:12px 0;font-size:13px}
-.component .comp-head{display:grid;grid-template-columns:1fr 112px 130px;gap:8px;align-items:center}
+.component .comp-head{display:grid;grid-template-columns:1fr 82px 112px 130px;gap:8px;align-items:center}
 .component input.qty{padding:9px 4px;text-align:center}
 .component textarea.bg-y{background:#fff3a8}.component textarea.bg-r{background:#ffc9c9}.component textarea.bg-g{background:#c8f0d0}
 .sw-row{display:flex;gap:10px;align-items:center;margin-top:6px;font-size:12px;color:var(--muted)}
@@ -58,12 +59,45 @@ textarea{min-height:75px}
 .sw.on{border-color:var(--navy);box-shadow:0 0 0 2px #fff,0 0 0 4px var(--navy)}
 .sw.c0{background:#fff}.sw.cy{background:#fff3a8}.sw.cr{background:#ffc9c9}.sw.cg{background:#c8f0d0}
 .component textarea{min-height:52px;margin-top:6px;font-size:13px}
-@media(max-width:520px){#app{padding:10px}.grid{gap:7px}.head{padding:12px}.component .comp-head{grid-template-columns:1fr 1.4fr}.component .comp-head>span{grid-column:1/-1}}
+@media(max-width:760px){
+  html{min-height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{min-height:100vh;min-height:100dvh}
+  #app{
+    width:100%;min-height:100vh;min-height:100dvh;max-width:850px;
+    margin-inline:auto;display:flex;flex-direction:column;
+    justify-content:safe center;
+    padding: max(16px, env(safe-area-inset-top, 0px)) 14px max(20px, env(safe-area-inset-bottom, 0px));
+  }
+  #app>*{flex:0 0 auto}
+  .head{padding:14px;gap:10px;margin-bottom:18px}
+  h1{font-size:clamp(21px,5.5vw,25px)}
+  .card{padding:14px;margin:10px 0}
+  .btn{min-height:44px;padding:11px 14px;touch-action:manipulation}
+  input,select,textarea{font-size:16px;min-height:44px}
+  .item{min-height:56px;padding:14px;gap:10px}
+  .actions{gap:8px}
+  .grid{grid-template-columns:1fr;gap:8px}
+  .component .comp-head{grid-template-columns:minmax(0,1fr) minmax(92px,1.4fr)}
+  .component .comp-head>span{grid-column:1/-1}
+}
+@media(max-width:520px){
+  #app{padding-left:12px;padding-right:12px}
+  .head{padding:12px}
+  .head .sub{font-size:11px}
+  .topline{align-items:center}
+  .topline h2{min-width:0;overflow-wrap:anywhere}
+  .btn.full{width:100%}
+}
+@media(max-height:620px) and (max-width:760px){
+  #app{justify-content:flex-start;padding-top:max(12px,env(safe-area-inset-top,0px))}
+}
 .item.dragging{opacity:.95;border-color:var(--blue);background:#f7fbfe;z-index:50}
 .item .handle{cursor:grab;color:var(--muted);font-size:22px;line-height:1;padding:10px 12px 10px 4px;user-select:none;touch-action:none;-webkit-user-select:none}
 .item .handle:active{cursor:grabbing;color:var(--blue)}
 .item{touch-action:pan-y;-webkit-user-select:none;user-select:none}
 body.reordering{overflow:hidden;touch-action:none}
+#toTop{position:fixed;right:16px;bottom:22px;z-index:700;width:48px;height:48px;border-radius:50%;border:0;background:var(--navy);color:#fff;font-size:22px;font-weight:700;box-shadow:0 4px 14px rgba(18,61,89,.35);cursor:pointer;display:none;align-items:center;justify-content:center;padding:0}
+#toTop.show{display:flex}
 #items.reordering{touch-action:none}
 #items.reordering .item{touch-action:none}
 
@@ -74,6 +108,8 @@ body.reordering{overflow:hidden;touch-action:none}
 #pal{position:fixed;z-index:900;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px;display:flex;gap:9px;box-shadow:0 8px 24px rgba(0,0,0,.28)}
 #pal button{width:34px;height:34px;border-radius:50%;border:2px solid #9aabb7;padding:0;cursor:pointer}
 #pal button.on{border-color:var(--navy);box-shadow:0 0 0 2px #fff,0 0 0 4px var(--navy)}
+.cam-info .c1,.cam-info .c2,.cam-info .c3{display:block}.cam-info .c2,.cam-info .c3{margin-top:4px}
+@media (orientation:landscape){.cam-info{left:12px;right:12px;bottom:92px;max-width:none;display:flex;gap:18px;align-items:flex-end}.cam-info .c2{flex:1;margin-top:0}.cam-info .c3{margin-top:0}.cam-info .t{font-size:24px}}
 #cam,#ed{position:fixed;inset:0;background:#000;z-index:1000;display:flex;flex-direction:column;color:#fff;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
 #cam video{flex:1;min-height:0;width:100%;object-fit:contain;background:#000}
 .cam-info{position:absolute;left:10px;bottom:112px;max-width:82%;background:rgba(0,0,0,.45);padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.35;pointer-events:none}
@@ -111,6 +147,8 @@ body.reordering{overflow:hidden;touch-action:none}
   .diagram{max-width:100%;max-height:65mm;object-fit:contain;display:block;margin:8px auto}
   .stamp{font-size:9px;color:#333}
 }
+
+.stock-wrap{display:inline-flex;align-items:center;gap:3px}.stock-edit{border:0;background:transparent;color:#53616a;border-radius:5px;padding:3px 5px;font-size:13px;cursor:pointer;opacity:.35}.stock-wrap:hover .stock-edit,.stock-wrap:focus-within .stock-edit{opacity:1}.stock-edit:active{background:#e8edf0}.remove-confirm-btn:hover,.remove-confirm-btn:active{background:#b42318!important;color:#fff!important;border-color:#991b1b!important}
 </style>
 </head>
 <body>
@@ -120,12 +158,12 @@ const D=[["Alamoa - Píer de Barcaças","bc",[["PB01","Regular"],["PB02","Regula
 const M={"a1":{"t":"i","c":"grau 2","q":0,"i":[[null,"Painel Frontal Metálico c/ Placas de Polietileno UHMW"],[null,"Elemento de Borracha Modular MV 1000H x 900L"],[null,"Cunha de Aço Estruturada Tratada 300 x 490 x 900mm"],[null,"Chumbador de Aço Galvanizado Ø 1.1/8\" x 286mm"],[null,"Arruela de Aço Galvanizado Ø 1.1/8\""],[null,"Parafuso Sextavado de Aço Galvanizado Ø 1.1/8\" x 2.1/4\""],[null,"Arruela Chanfrada de Aço Galvanizado Ø 1.7/8\" x 3.3/8\" x 3.3/8\""],[null,"Parafuso Sextavado de Aço Galvanizado Ø 1.3/4\" x 4.1/2\""],[null,"Barra Roscada de Aço Galvanizado Ø 1.1/4\" x 390mm"],[null,"Arruela de Aço Galvanizado Ø 1.1/4\""],[null,"Porca Sextavada de Aço Galvanizado Ø 1.1/4\""],[null,"Suporte de Corrente Galvanizado de 115 x 128 x 390mm"],[null,"Amortecedor Neoprene 90 x 90 x 200mm - Dureza Shore 60A"],[null,"Manilha de Aço Galvanizado - Ø 1\""],[null,"Corrente de Peso em Aço Galvanizado a Fogo"],[null,"Corrente de Restrição em Aço Galvanizado a Fogo"],[null,"Estacas Laterais de 300 x 300mm"]]},"a3":{"t":"i","c":1,"q":1,"i":[[2,"Corrrente SAE 1020 - ø 25,4 mm (ø 1\") - 10 elos"],[2,"Corrrente SAE 1020 - ø 31,8 mm (ø 1 1/4\") - 10 elos"],[2,"Corrrente SAE 1020 - ø 44,4 mm (ø 1 3/4\") - 5 elos"],[2,"Esticador manilha x manilha 1 1/4\" - corpo de 12\""],[2,"Esticador manilha x manilha 1 3/4\" - corpo de 18\""],[4,"Manilha reta união forjada ø 1\""],[2,"Manilha reta união forjada ø 1 1/4\""],[2,"Manilha reta união forjada ø 1 3/4\""],[2,"Suporte de Corrente Tipo U 1\""],[6,"Chumbador M42 X 580mm"],[12,"Parafuso M42"],[12,"Porca M42"],[18,"Arruela M42"],[1,"Painel Metálico"],[1,"Elemento de borracha cilindrico 1360 X 1360"],[1,"Adaptador Metálico"]]},"dl":{"t":"i","c":1,"q":1,"i":[[1,"Painel Metálico 2230x2230 AÇO ASTM-A36"],[1,"Elemento de Borracha Cilindrica SCK1000"],[2,"Corrente de Restrição - 07 elos"],[2,"Corrente de Peso - 12 elos"],[6,"Manilha reta união forjada"],[2,"Ajustador para corrente SAE 1045"],[4,"Suporte de Corrente Tipo U"],[6,"Parafuso SAE 1045 CAB SEXT"],[6,"Arruela Especial"],[6,"Chumbador + Porca Sextavada"]]},"bc":{"t":"i","c":1,"q":1,"i":[[1,"Painel Metálico 1600 x 4450"],[2,"Elemento de borracha Cilíndrico Ø 600"],[2,"Madeira Prancha 250x250x4600"],[2,"Mão Francesa Maior"],[2,"Chumbador M25 x 330"],[4,"Porca M30"],[2,"Parafuso M30"],[2,"Tirante 1,50m x 32mm"],[2,"Corrente de Peso"],[6,"Corrente de Restrição"]]},"cn":{"t":"f","i":[[1,"ELEMENTO DE BORRACHA CÔNICA 1300H"],[1,"PAINEL METÁLICO 2300 X 3860 C/ CHANFRO"],[8,"BARRA ROSCADA COM ROSCA INTEIRA ø 48 x 570 mm"],[8,"ARRUELA ESPECIAL \"L\" - ø 52 x 175 x 130 mm (chapa 10 mm)"],[8,"PARAFUSO SAE 1045 CAB. SEXT. M48 x 100 mm ROSCA INTEIRA UNC + PORCA SEXT. + ARRUELA LISA"],[2,"GRAMPO \"U\" SAE 1045, ø 40 x 536 (mm)"],[2,"CORRENTE GALVANIZADA DE ø1.1/4\" ELO CURTO"],["-","AIUSTADOR PARA CORRENTE ø 1.1/4\", SAE 1045 ROSCA UNC"],[2,"CORRENTE GALVANIZADA DE ø 1.1/8\" ELO CURTO"],["-","AIUSTADOR PARA CORRENTE ø 1.1/8\", SAE 1045 ROSCA UM"],[8,"MANILHA RETA UNIÃO FORJADA - ø 1.1/4\" COM PINO ALLOY ROSCADO"],[8,"PORCA FLANGEADA SEXTAVADA M16 / ø 44 x 6 (mm)"],[9,"PLACAS DE POLIETILENO ESPESSURA 40 mm - UHMWPE - COR PRETA"]]},"ou":{"t":"f","i":[[1,"ELEMENTO DE BORRACHA CONE PSM-AA-1150"],[1,"PAINEL METÁLICO 2200 X 2200 C/ CHANFRO"],[2,"SUPORTE DE CORRENTE TIPO \"U\" - CONCRETO NOVO - Ø1.1/2\" X 653"],[6,"CHUMBADOR CONCRETO NOVO - M42 X 370 (BUCHA)"],[6,"ARRUELA ESPECIAL 3/16\" X 139 X 100"],[6,"PARAFUSO SEXTAVADO DIN 933 M42 X 110"],[6,"PARAFUSO SEXTAVADO DIN 933 M42X80"],[6,"ARRUELA LISA M42 - DIN 126"],[2,"CORRENTE DE RESTRIÇÃO/CISALHAMENTO Ø1\" X 13 ELOS"],[8,"MANILHA RETA C/ PINO ROSCADO Ø1\" GF"],[2,"CORRENTE DE PESO Ø1\" X 08 ELOS GF"],[2,"CORRENTE DE PESO Ø1\" X 07 ELOS GF"],[2,"AJUSTADOR DE CORRENTE Ø1.1/4\" GF"]]},"sb":{"t":"f","p":[1,2,3,4,4,4,8,9,10],"i":[["01 pç","Placa de polietileno de 1300 x 1500 x 120mm"],["02 pçs","Elemento de borracha MV 1000 x 1500 B"],["02 pçs","Cunha de aço estruturada"],["02 pçs","Chumbador de aço galvanizado - Ø1.3/4\" x 610mm"],["02 pçs","Chumbador de aço galvanizado - Ø1.3/4\" x 675mm"],["02 pçs","Chumbador de aço galvanizado - Ø1.3/4\" x 745mm"],["06 pçs","Arruela chanfrada de aço galv. - Ø 1.3/4\" x 3.3/8\" x 3.3/8\""],["06 pçs","Parafuso sextavado de aço galvanizado - Ø1.3/4\" x 200mm"],["12 pçs","Porca sextavada de aço galvanizado - Ø 1.3/4\""]]},"arm":{"t":"f","i":[]}};
 const L=["Lado esquerdo","Frontal","Lado direito"];
 
-const COND_DEF = ["Selecionar","REGULAR","COM AVARIAS","CRÍTICA"];
+const COND_DEF = ["Selecionar","BOA","REGULAR","COM AVARIAS","CRÍTICA"];
 const COND_PART = ["","BOM","REGULAR","RUIM"];
-const COND_CRIT = ["Selecionar","Grau 1","Grau 2","Grau 3"];
-const CRIT_AUTO = {"REGULAR":"Grau 1","COM AVARIAS":"Grau 2","CRÍTICA":"Grau 3"};
-const CRIT_BG = {"Grau 2":"#fff3a8","Grau 3":"#ffc9c9"};
-const PCOL = { y: "#fff3a8", r: "#ffc9c9", g: "#c8f0d0", b: "#cfe6ff" };
+const COND_CRIT = ["Selecionar","Grau 0","Grau 1","Grau 2","Grau 3"];
+const CRIT_AUTO = {"BOA":"Grau 0","REGULAR":"Grau 1","COM AVARIAS":"Grau 2","CRÍTICA":"Grau 3"};
+const CRIT_BG = {"Grau 2":"#fff3a8","Grau 3":"#a50f15"};
+const PCOL = { y: "#fff3a8", r: "#ffc9c9", g: "#c8f0d0" };
 const BERCO_INFO = [
   { berco: "ALAMOA PB", sigla: "PB" },
   { berco: "ALAMOA 01", sigla: "AL1" },
@@ -159,6 +197,34 @@ let db;
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+const goTop = () => {
+  try {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const appEl = document.getElementById('app');
+    if (appEl) appEl.scrollTop = 0;
+  } catch (_) { try { window.scrollTo(0, 0); } catch (__) {} }
+};
+function ensureToTop(show) {
+  let b = document.getElementById('toTop');
+  if (!show) { if (b) b.remove(); return; }
+  if (!b) {
+    b = document.createElement('button');
+    b.id = 'toTop';
+    b.type = 'button';
+    b.title = 'Voltar ao topo';
+    b.setAttribute('aria-label', 'Voltar ao topo');
+    b.textContent = '↑';
+    b.onclick = e => { e.preventDefault(); e.stopPropagation(); goTop(); };
+    document.body.appendChild(b);
+  }
+  // sempre visível nestas telas (setores longos / ficha da defensa)
+  b.classList.add('show');
+}
+
+
+const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 let noDB = false;
 const mem = { records: new Map(), settings: new Map() };
 const openDB = () => new Promise((resolve, reject) => {
@@ -221,15 +287,33 @@ const blank = () => ({
   parts: {},
   partNotes: {},
   partQty: {},
+  partStockQty: {},
   partColors: {},
+  extraMaterials: [],
+  removedParts: [],
+  noDiagram: false,
   inspectionDate: ''
 });
+
+
+function materialsOf(si, v) {
+  v = normalizeRecord(v || blank());
+  const modelKey = D[si] && D[si][1];
+  const base = (M[modelKey]?.i || []).map((p, j) => ({ src: 'base', idx: j, name: p[1] }))
+    .filter(x => !(v.removedParts || []).includes(x.idx));
+  const extra = (v.extraMaterials || []).map((name, j) => ({ src: 'extra', idx: j, name }));
+  return base.concat(extra);
+}
 
 function normalizeRecord(v) {
   if (!v) return blank();
   if (!v.partNotes) v.partNotes = {};
   if (!v.partQty) v.partQty = {};
+  if (!v.partStockQty) v.partStockQty = {};
   if (!v.partColors) v.partColors = {};
+  if (!Array.isArray(v.extraMaterials)) v.extraMaterials = [];
+  if (!Array.isArray(v.removedParts)) v.removedParts = [];
+  if (typeof v.noDiagram !== 'boolean') v.noDiagram = !!v.noDiagram;
   for (const k of Object.keys(v.partNotes)) v.partNotes[k] = String(v.partNotes[k] || '').slice(0, 70);
   // Migrate old part values if needed
   if (v.parts) {
@@ -248,13 +332,12 @@ function normalizeRecord(v) {
   if (v.condition === 'Com Avarias') v.condition = 'COM AVARIAS';
   if (v.condition === 'Crítica') v.condition = 'CRÍTICA';
   if (!COND_DEF.includes(v.condition)) v.condition = 'Selecionar';
-  if (!v.criticality || !COND_CRIT.includes(v.criticality)) v.criticality = 'Selecionar';
-  if (v.criticality === 'Selecionar' && CRIT_AUTO[v.condition]) v.criticality = CRIT_AUTO[v.condition];
+  v.criticality = CRIT_AUTO[v.condition] || 'Selecionar';
   return v;
 }
 
 function header() {
-  return `<header class="head"><div><div class="brand">COPABO INFRA</div><div class="sub">Sistema de inspeção de defensas</div></div><div class="sub">Modo local · ${navigator.onLine ? 'Conectado' : 'Offline'}</div></header>`;
+  return `<header class="head"><div><div class="brand">CopaboInfra Inspeção Defensas</div><div class="sub">Sistema de inspeção de defensas</div></div><div class="sub">Modo local · ${navigator.onLine ? 'Conectado' : 'Offline'}</div></header>`;
 }
 
 function diag() {
@@ -273,6 +356,7 @@ function diag() {
 }
 
 function home() {
+  ensureToTop(false);
   const total = D.reduce((a, s, i) => a + list(i).length, 0);
   app.innerHTML = header() +
     `<h1>Relatório de Defensas</h1>
@@ -291,37 +375,64 @@ function home() {
 }
 
 function sectors() {
+  ensureToTop(true);
   app.innerHTML = header() +
-    `<div class="topline"><button class="btn secondary" data-a="home">‹ Início</button><h2>Escolha um setor</h2></div>` +
-    D.map((s, i) =>
-      `<div class="item" data-a="sector" data-si="${i}">
-        <span><b>${esc(s[0])}</b><small>${list(i).length} defensas · Diagrama ${s[1] || 'em análise'}</small></span>
+    `<div class="topline"><button class="btn secondary" data-a="home">‹ Início</button><h2>Escolha um setor</h2></div>
+    <div class="actions" style="margin:8px 0">
+      <button class="btn full" data-a="addsector">＋ Adicionar setor</button>
+    </div>
+    <input id="q" type="search" placeholder="🔍 Pesquisar setor…" autocomplete="off" style="margin:8px 0">` +
+    D.map((s, i) => {
+      const custom = !!(settings.customSectors || []).find(c => c.key === s[1] && c.name === s[0]);
+      return `<div class="item" data-a="sector" data-si="${i}" data-s="${esc(norm(s[0]))}">
+        <span><b>${esc(s[0])}</b><small>${list(i).length} defensas · Diagrama ${s[1] || 'em análise'}${custom ? ' · personalizado' : ''}</small></span>
         <span>›</span>
-      </div>`
-    ).join('');
+      </div>`;
+    }).join('') +
+    `<p class="muted hidden" id="noRes">Nenhum setor encontrado.</p>
+    <button type="button" class="btn secondary full" id="btnTopSectors" style="margin-top:14px">↑ Voltar ao topo</button>`;
+  const b = document.getElementById('btnTopSectors');
+  if (b) b.onclick = e => { e.preventDefault(); goTop(); };
+  requestAnimationFrame(() => goTop());
 }
 
 async function sector(si) {
   current.si = si;
+  const isCustom = !!(settings.customSectors || []).find(c => c.key === D[si][1] && c.name === D[si][0]);
   app.innerHTML = header() +
-    `<div class="topline"><button class="btn secondary" data-a="home">‹ Início</button><h2>${esc(D[si][0])}</h2></div>
+    `<div class="topline"><button class="btn secondary" data-a="start">‹ Setores</button><h2>${esc(D[si][0])}</h2></div>
+    <div class="actions" style="margin:8px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn danger" data-a="clearsec" data-si="${si}">🗑 Limpar informações do setor</button>
+        ${isCustom ? `<button class="btn danger" data-a="delsector" data-si="${si}">🗑 Excluir setor personalizado</button>` : ''}
+      </div>
+      <button class="btn rename" data-a="rensec" data-si="${si}" style="margin-left:auto;padding:8px 12px;font-size:13px">Renomear setor</button>
+    </div>
+    <input id="q" type="search" placeholder="🔍 Pesquisar defensa…" autocomplete="off" style="margin:4px 0 8px">
     <p class="muted" style="margin:0 0 8px">Segure e arraste pelo ícone ☰ para reordenar.</p>
     <div id="items">Carregando...</div>
-    <button class="btn full" data-a="add" style="margin-top:12px">＋ Adicionar defensa</button>`;
+    <p class="muted hidden" id="noRes">Nenhuma defensa encontrada.</p>
+    <button class="btn full" data-a="add" style="margin-top:12px">＋ Adicionar defensa</button>
+    <button type="button" class="btn secondary full" id="btnTopSectorBottom" style="margin-top:8px">↑ Voltar ao topo</button>`;
   let rows = '';
   for (const [id, cond] of list(si)) {
     const v = normalizeRecord(await get('records', key(si, id)) || blank());
-    const count = (v.photos || []).slice(0, 3).filter(Boolean).length;
+    const count = (v.photos || []).slice(0, L.length).filter(Boolean).length;
     const label = v.condition && v.condition !== 'Selecionar' ? v.condition : 'Selecionar';
-    const pillClass = label === 'REGULAR' ? 'ok' : (label === 'CRÍTICA' ? 'bad' : (label === 'COM AVARIAS' ? 'warn' : ''));
-    rows += `<div class="item" data-a="def" data-si="${si}" data-id="${esc(id)}" draggable="false">
+    const pillClass = (label === 'BOA' || label === 'REGULAR') ? 'ok' : (label === 'CRÍTICA' ? 'bad' : (label === 'COM AVARIAS' ? 'warn' : ''));
+    rows += `<div class="item" data-a="def" data-si="${si}" data-id="${esc(id)}" data-s="${esc(norm(id + ' ' + label))}" draggable="false">
       <span class="handle" data-handle="1" title="Arrastar">☰</span>
-      <span style="flex:1;min-width:0"><b>${esc(id)}</b><small>${esc(label)} · ${count}/3 fotos</small></span>
+      <span style="flex:1;min-width:0"><b>${esc(id)}</b><small>${esc(label)} · ${count}/${L.length} fotos</small></span>
       <span class="pill ${pillClass}">${esc(label)}</span>
     </div>`;
   }
   document.getElementById('items').innerHTML = rows || '<p class="muted">Nenhuma defensa neste setor.</p>';
   bindReorder(si);
+  const nSec = list(si).length;
+  ensureToTop(false);
+  const topBtn = document.getElementById('btnTopSectorBottom');
+  if (topBtn) topBtn.onclick = e => { e.preventDefault(); goTop(); };
+  requestAnimationFrame(() => { goTop(); setTimeout(goTop, 50); });
 }
 
 function bindReorder(si) {
@@ -476,8 +587,14 @@ function bindReorder(si) {
 async function openDef(si, id) {
   const original = list(si).find(x => x[0] === id);
   current = { si, id, condition: original?.[1] || '' };
-  current.v = normalizeRecord(await get('records', key(si, id)) || blank());
+  let raw = await get('records', key(si, id));
+  const isNew = !raw;
+  current.v = normalizeRecord(raw || blank());
+  const cs = (settings.customSectors || []).find(c => c.key === D[si][1]);
+  if (typeof current.v.noQuantity !== 'boolean') current.v.noQuantity = !!(cs && cs.noQuantity);
+  if (isNew && cs && cs.noDiagramDefault) current.v.noDiagram = true;
   paintDef();
+  requestAnimationFrame(() => { goTop(); setTimeout(goTop, 80); });
 }
 
 function paintDef() {
@@ -485,16 +602,12 @@ function paintDef() {
   const modelKey = D[si][1];
   const items = (M[modelKey]?.i || []);
   app.innerHTML = header() +
-    `<div class="topline"><button class="btn secondary" data-a="sector" data-si="${si}">‹ Setor</button><b>${esc(D[si][0])} · Defensa ${esc(id)}</b></div>
+    `<div class="topline"><button class="btn secondary" data-a="sector" data-si="${si}">‹ Setor</button><b>${esc(D[si][0])} · Defensa ${esc(id)}</b>
+      <button type="button" class="btn rename" data-a="rendef" style="margin-left:auto;padding:8px 12px;font-size:13px">Renomear defensa</button></div>
     <div class="card">
       <label>Data de inspeção</label>
       <input type="date" id="inspectionDate" value="${esc(v.inspectionDate || '')}">
       <p class="muted" style="margin:4px 0 0">Preenchida automaticamente pela foto em tempo real. Sem foto em tempo real, digite a data.</p>
-      <label>Condição da defensa</label>
-      <select id="condition">${COND_DEF.map(x => `<option value="${x}" ${v.condition === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
-      <p class="muted" id="critAuto" style="margin:8px 0 0">Criticidade (automática): <b>${esc(CRIT_AUTO[v.condition] || '—')}</b></p>
-      <label>Observações gerais (máx. 220 caracteres)</label>
-      <textarea id="notes" maxlength="220" placeholder="Descreva as condições encontradas (máx. 220 caracteres)">${esc(v.notes || '')}</textarea>
     </div>
     <h2>Registro fotográfico</h2>
     <div class="grid">${L.map((label, j) =>
@@ -509,31 +622,66 @@ function paintDef() {
       </div>`
     ).join('')}</div>
     <div class="card">
-      <h2>Componentes do diagrama</h2>
-      <p class="muted">${esc(modelKey || 'Diagrama não definido')}</p>
-      ${items.map((p, j) => {
-        const status = v.parts[j] || '';
-        const note = (v.partNotes[j] || '').slice(0, 70);
-        const qty = v.partQty[j] ?? '';
-        const col = v.partColors[j] || '';
-        return `<div class="component">
+      <h2>Componentes / materiais</h2>
+      <p class="muted">${esc(modelKey || 'Modelo não definido')}</p>
+      <div class="actions" style="margin:8px 0 10px">
+        <button type="button" class="btn secondary" data-a="rmmatsel">Remover materiais</button>
+      </div>
+      <hr style="border:0;border-top:1px solid var(--line,#d7dde1);margin:10px 0">
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin:10px 0;color:var(--ink)">
+        <input type="checkbox" id="noMaterialQty" ${v.noQuantity ? 'checked' : ''} style="width:18px;height:18px">
+        <b>Não usar quantidade de materiais</b>
+      </label>
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin:10px 0;color:var(--ink)">
+        <input type="checkbox" id="noDiagram" ${v.noDiagram ? 'checked' : ''} style="width:18px;height:18px">
+        <b>Não usar diagrama nesta defensa</b>
+      </label>
+      ${(function(){
+        const mats = materialsOf(si, v);
+        if (!mats.length) return '<p class="muted">Nenhum material. Adicione ao menos um.</p>';
+        return mats.map((m, j) => {
+          const key = m.src + ':' + m.idx;
+          const status = v.parts[key] || v.parts[m.src === 'base' ? m.idx : 'e' + m.idx] || '';
+          const note = (v.partNotes[key] || v.partNotes[m.src === 'base' ? m.idx : 'e' + m.idx] || '').slice(0, 70);
+          const qty = v.partQty[key] ?? v.partQty[m.src === 'base' ? m.idx : 'e' + m.idx] ?? '';
+          const col = v.partColors[key] || v.partColors[m.src === 'base' ? m.idx : 'e' + m.idx] || '';
+          return `<div class="component" data-mat-src="${m.src}" data-mat-idx="${m.idx}">
           <div class="comp-head">
-            <span>${j + 1}. ${esc(p[1])}</span>
-            <input class="qty" type="number" inputmode="numeric" min="0" max="999" data-partqty="${j}" value="${esc(qty)}" placeholder="Qtd. avariada" title="Quantidade avariada" aria-label="Quantidade avariada">
-            <select data-part="${j}">
+            <label style="display:flex;gap:8px;align-items:flex-start;margin:0;cursor:pointer">
+              <span>${j + 1}. ${esc(m.name)}</span>
+            </label>
+            ${v.noQuantity ? '' : `<span class="stock-wrap"><input class="qty" type="number" inputmode="numeric" min="0" max="99999" data-stockqty="${key}" value="${esc(v.partStockQty[key] ?? '')}" placeholder="Quant." title="Quantidade total fixa do material" aria-label="Quantidade total do material" readonly><button type="button" class="stock-edit" data-a="editstock" data-editstock="${key}" title="Editar quantidade fixa" aria-label="Editar quantidade fixa">✎</button></span>`}
+            <input class="qty" type="number" inputmode="numeric" min="0" max="999" data-partqty="${key}" value="${esc(qty)}" placeholder="Avariada" title="Quantidade avariada" aria-label="Quantidade avariada">
+            <select data-part="${key}">
               ${COND_PART.map(x => `<option value="${x}" ${status === x ? 'selected' : ''}>${x || 'Não avaliado'}</option>`).join('')}
             </select>
           </div>
-          <div class="obs"><textarea data-partnote="${j}" maxlength="70" class="${col ? 'bg-' + col : ''}" placeholder="Observação do componente (máx. 70 caracteres)">${esc(note)}</textarea><button type="button" class="pal-btn" data-a="pal" data-j="${j}" title="Cor de fundo da observação" aria-label="Cor de fundo da observação" style="${col ? 'background:' + PCOL[col] : ''}">🎨</button></div>
+          <div class="obs"><textarea data-partnote="${key}" maxlength="70" class="${col ? 'bg-' + col : ''}" placeholder="Observação do componente (máx. 70 caracteres)">${esc(note)}</textarea><button type="button" class="pal-btn" data-a="pal" data-j="${key}" title="Cor de fundo da observação" aria-label="Cor de fundo da observação" style="${col ? 'background:' + (PCOL[col]||'') : ''}">🎨</button></div>
         </div>`;
-      }).join('')}
+        }).join('');
+      })()}
+      <div class="actions" style="margin-top:10px">
+        <button type="button" class="btn secondary" data-a="addmat">＋ Adicionar material</button>
+      </div>
+    </div>
+    <div class="card">
+      <label>Condição da defensa</label>
+      <select id="condition">${COND_DEF.map(x => `<option value="${x}" ${v.condition === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      <p class="muted" id="critAuto" style="margin:8px 0 0">Criticidade (automática): <b>${esc(CRIT_AUTO[v.condition] || '—')}</b></p>
+      <label>Observações gerais (máx. 220 caracteres)</label>
+      <textarea id="notes" maxlength="220" placeholder="Descreva as condições encontradas (máx. 220 caracteres)">${esc(v.notes || '')}</textarea>
     </div>
     <div class="actions">
       <button class="btn" data-a="pdfone">PDF desta defensa</button>
       <button class="btn danger" data-a="reset">Limpar informações</button>
       <button class="btn danger" data-a="remove">Remover defensa</button>
     </div>
-    <p class="muted">Salvamento automático ao alterar campos. Os dados permanecem neste aparelho.</p>`;
+    <p class="muted">Salvamento automático ao alterar campos. Os dados permanecem neste aparelho.</p>
+    <button type="button" class="btn secondary full" id="btnTopDef" style="margin-top:14px">↑ Voltar ao topo</button>`;
+  const topBtn = document.getElementById('btnTopDef');
+  if (topBtn) topBtn.onclick = e => { e.preventDefault(); e.stopPropagation(); goTop(); };
+  ensureToTop(true);
+  requestAnimationFrame(() => { goTop(); setTimeout(goTop, 50); });
 }
 
 function closePalette() {
@@ -546,9 +694,9 @@ function palOutside(e) { if (!e.target.closest('#pal')) closePalette(); }
 async function applyColor(j, c) {
   current.v.partColors = current.v.partColors || {};
   if (c) current.v.partColors[j] = c; else delete current.v.partColors[j];
-  const ta = app.querySelector(`[data-partnote="${j}"]`);
+  const ta = app.querySelector('[data-partnote="' + j + '"]');
   if (ta) ta.className = c ? 'bg-' + c : '';
-  const bt = app.querySelector(`[data-a="pal"][data-j="${j}"]`);
+  const bt = app.querySelector('[data-a="pal"][data-j="' + j + '"]');
   if (bt) bt.style.background = c ? PCOL[c] : '';
   await put('records', key(current.si, current.id), current.v);
 }
@@ -557,7 +705,7 @@ function openPalette(btn, j) {
   const cur = (current.v.partColors || {})[j] || '';
   const p = document.createElement('div');
   p.id = 'pal';
-  p.innerHTML = [['', '#ffffff', 'Padrão'], ['y', PCOL.y, 'Amarelo'], ['r', PCOL.r, 'Vermelho'], ['g', PCOL.g, 'Verde'], ['b', PCOL.b, 'Azul']]
+  p.innerHTML = [['', '#ffffff', 'Padrão'], ['y', PCOL.y, 'Amarelo'], ['r', PCOL.r, 'Vermelho'], ['g', PCOL.g, 'Verde'], ]
     .map(([c, bg, t]) => `<button type="button" data-c="${c}" class="${cur === c ? 'on' : ''}" style="background:${bg}" title="${t}" aria-label="${t}"></button>`).join('');
   document.body.appendChild(p);
   const r = btn.getBoundingClientRect(), w = p.offsetWidth, hh = p.offsetHeight;
@@ -612,7 +760,7 @@ function startGeo(cb) {
 }
 function stopGeo() { if (geo.watch != null) { navigator.geolocation.clearWatch(geo.watch); geo.watch = null; } }
 
-function drawShape(ctx, s, lw) {
+function drawShape(ctx, s, lw, selected) {
   const pass = (col, w) => {
     ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath();
@@ -624,25 +772,92 @@ function drawShape(ctx, s, lw) {
       ctx.arc(s.x1, s.y1, Math.hypot(s.x2 - s.x1, s.y2 - s.y1), 0, Math.PI * 2);
       ctx.stroke();
     } else {
-      const an = Math.atan2(s.y2 - s.y1, s.x2 - s.x1), hd = lw * 5;
+      const an = Math.atan2(s.y2 - s.y1, s.x2 - s.x1), hd = lw * 7;
       ctx.moveTo(s.x1, s.y1);
-      ctx.lineTo(s.x2 - Math.cos(an) * hd * .6, s.y2 - Math.sin(an) * hd * .6);
+      ctx.lineTo(s.x2 - Math.cos(an) * hd * .55, s.y2 - Math.sin(an) * hd * .55);
       ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(s.x2, s.y2);
-      ctx.lineTo(s.x2 - hd * Math.cos(an - .45), s.y2 - hd * Math.sin(an - .45));
-      ctx.lineTo(s.x2 - hd * Math.cos(an + .45), s.y2 - hd * Math.sin(an + .45));
+      ctx.lineTo(s.x2 - hd * Math.cos(an - .48), s.y2 - hd * Math.sin(an - .48));
+      ctx.lineTo(s.x2 - hd * Math.cos(an + .48), s.y2 - hd * Math.sin(an + .48));
       ctx.closePath(); ctx.fill(); ctx.stroke();
     }
   };
-  pass('rgba(0,0,0,.45)', lw + Math.max(2, lw * .6));
-  pass(s.c, lw);
+  const base = s.k === 'pen' ? lw * .65 : lw * 1.15;
+  const outline = base + Math.max(5, base * 0.85);
+  pass('rgba(0,0,0,.72)', outline);
+  pass(s.c, base);
+  if (selected) {
+    ctx.save();
+    ctx.setLineDash([8, 6]);
+    ctx.strokeStyle = '#00e5ff';
+    ctx.lineWidth = Math.max(3, lw * .35);
+    ctx.beginPath();
+    if (s.k === 'circle') {
+      ctx.arc(s.x1, s.y1, Math.hypot(s.x2 - s.x1, s.y2 - s.y1) + outline, 0, Math.PI * 2);
+    } else if (s.k === 'pen' && s.pts && s.pts.length) {
+      s.pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]));
+    } else {
+      ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2);
+    }
+    ctx.stroke();
+    ctx.restore();
+    if (s.k !== 'pen') {
+      for (const [hx, hy] of [[s.x1, s.y1], [s.x2, s.y2]]) {
+        ctx.beginPath();
+        ctx.fillStyle = '#00e5ff';
+        ctx.arc(hx, hy, Math.max(10, lw * 0.9), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function hitShape(s, x, y, lw, wantHandle) {
+  const tol = Math.max(36, lw * 3.2);
+  if (s.k === 'circle') {
+    const r = Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+    const d = Math.hypot(x - s.x1, y - s.y1);
+    return Math.abs(d - r) < tol ? true : false;
+  }
+  if (s.k === 'pen' && s.pts && s.pts.length) {
+    for (let i = 1; i < s.pts.length; i++) {
+      const [x1, y1] = s.pts[i - 1], [x2, y2] = s.pts[i];
+      const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2 || 1;
+      let tt = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / l2;
+      tt = Math.max(0, Math.min(1, tt));
+      const px = x1 + tt * (x2 - x1), py = y1 + tt * (y2 - y1);
+      if (Math.hypot(x - px, y - py) < tol) return true;
+    }
+    return false;
+  }
+  // seta / linha
+  const x1 = s.x1, y1 = s.y1, x2 = s.x2, y2 = s.y2;
+  const ht = Math.max(28, lw * 2.5);
+  if (wantHandle) {
+    if (Math.hypot(x - x1, y - y1) < ht) return 'h1';
+    if (Math.hypot(x - x2, y - y2) < ht) return 'h2';
+  }
+  const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2 || 1;
+  let tt = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / l2;
+  tt = Math.max(0, Math.min(1, tt));
+  const px = x1 + tt * (x2 - x1), py = y1 + tt * (y2 - y1);
+  if (Math.hypot(x - px, y - py) < tol) return true;
+  // caixa envolvente expandida (setas diagonais finas)
+  const minx = Math.min(x1, x2) - tol, maxx = Math.max(x1, x2) + tol;
+  const miny = Math.min(y1, y2) - tol, maxy = Math.max(y1, y2) + tol;
+  if (x >= minx && x <= maxx && y >= miny && y <= maxy && Math.hypot(x - px, y - py) < tol * 1.4) return true;
+  return false;
 }
 
 function drawStamp(ctx, W, H, info, label) {
-  const d = info.now, p = info.pos && info.pos.coords;
-  const u = Math.max(13, Math.round(Math.min(W, H) / 40)), pd = Math.round(u * .75), maxW = Math.round(W * .5);
+  const d = info.now, p = info.pos && info.pos.coords, land = W >= H * 1.15;
+  const u = Math.max(13, Math.round(Math.min(W, H) / (land ? 40 : 40))), pd = Math.round(u * .75);
   const F = (s, bold) => `${bold ? 'bold ' : ''}${Math.round(s)}px system-ui,Arial,sans-serif`;
+  const mwid = (t, f) => { ctx.font = f; return ctx.measureText(t).width; };
   const wrap = (t, font, mw) => {
     ctx.font = font;
     const out = []; let line = '';
@@ -653,23 +868,49 @@ function drawStamp(ctx, W, H, info, label) {
     if (line) out.push(line);
     return out;
   };
-  const rows = [[fmtT(d), F(u * 2.3, 1), u * 2.5], [`${WD[d.getDay()]}, ${fmtD(d)}`, F(u, 1), u * 1.3]];
-  wrap(info.addr || 'Endereço indisponível', F(u * .9), maxW - 2 * pd).slice(0, 3).forEach(t => rows.push([t, F(u * .9), u * 1.12]));
-  rows.push([p ? `Lat ${p.latitude.toFixed(6)} · Lon ${p.longitude.toFixed(6)} · ±${Math.round(p.accuracy)} m` : 'Localização não disponível', F(u * .9), u * 1.12]);
-  rows.push([label, F(u * .9), u * 1.12]);
-  let w = 0;
-  rows.forEach(r => { ctx.font = r[1]; w = Math.max(w, ctx.measureText(r[0]).width); });
-  const bw = Math.min(w, maxW - 2 * pd) + 2 * pd, bh = rows.reduce((a, r) => a + r[2], 0) + 2 * pd;
-  const x = Math.round(u * .8), y = Math.round(H - bh - u * .8), r0 = u * .6;
+  const rr = (x, y, w, hh, r0) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r0, y); ctx.arcTo(x + w, y, x + w, y + hh, r0); ctx.arcTo(x + w, y + hh, x, y + hh, r0);
+    ctx.arcTo(x, y + hh, x, y, r0); ctx.arcTo(x, y, x + w, y, r0); ctx.closePath();
+  };
+  const timeT = fmtT(d), dateT = `${WD[d.getDay()]}, ${fmtD(d)}`, addr = info.addr || 'Endereço indisponível';
+  const coords = p ? [`Lat ${p.latitude.toFixed(6)}`, `Lon ${p.longitude.toFixed(6)}`, `±${Math.round(p.accuracy)} m`] : ['Localização', 'não disponível'];
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,.5)';
-  ctx.beginPath();
-  ctx.moveTo(x + r0, y); ctx.arcTo(x + bw, y, x + bw, y + bh, r0); ctx.arcTo(x + bw, y + bh, x, y + bh, r0);
-  ctx.arcTo(x, y + bh, x, y, r0); ctx.arcTo(x, y, x + bw, y, r0); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.textBaseline = 'top';
-  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = u * .15;
-  let cy = y + pd;
-  rows.forEach(r => { ctx.font = r[1]; ctx.fillText(r[0], x + pd, cy, bw - 2 * pd); cy += r[2]; });
+  // Paisagem: faixa horizontal em 3 colunas (hora/data | endereço | coordenadas)
+  const bx = Math.round(u * .8), bw = W - 2 * bx;
+  const c1 = Math.max(mwid(timeT, F(u * 2.3, 1)), mwid(dateT, F(u, 1)));
+  const c3 = Math.max(...coords.map(t => mwid(t, F(u * .95))));
+  const gap = pd * 1.6, c2 = bw - 2 * pd - c1 - c3 - 2 * gap;
+  if (land && c2 > u * 8) {
+    const al = wrap(addr, F(u * .95), c2).slice(0, 3), lh = 1.15 * u;
+    const bh = Math.max(3.8 * u, (al.length + 1) * lh, coords.length * lh) + 2 * pd, by = Math.round(H - bh - u * .8);
+    ctx.fillStyle = 'rgba(0,0,0,.5)'; rr(bx, by, bw, bh, u * .6); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.textBaseline = 'top'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = u * .15;
+    const x1 = bx + pd, x2 = x1 + c1 + gap, x3 = x2 + c2 + gap, y0 = by + pd;
+    ctx.font = F(u * 2.3, 1); ctx.fillText(timeT, x1, y0);
+    ctx.font = F(u, 1); ctx.fillText(dateT, x1, y0 + 2.5 * u);
+    ctx.font = F(u * .95);
+    al.forEach((t, k) => ctx.fillText(t, x2, y0 + k * lh));
+    ctx.fillText(label, x2, y0 + al.length * lh, c2);
+    coords.forEach((t, k) => ctx.fillText(t, x3, y0 + k * lh));
+    ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = Math.max(1, u * .06);
+    [x2 - gap / 2, x3 - gap / 2].forEach(xx => { ctx.beginPath(); ctx.moveTo(xx, by + pd * .8); ctx.lineTo(xx, by + bh - pd * .8); ctx.stroke(); });
+  } else {
+    // Retrato: quadro compacto no canto inferior esquerdo
+    const maxW = Math.round(W * .5);
+    const rows = [[timeT, F(u * 2.3, 1), u * 2.5], [dateT, F(u, 1), u * 1.3]];
+    wrap(addr, F(u * .9), maxW - 2 * pd).slice(0, 3).forEach(t => rows.push([t, F(u * .9), u * 1.12]));
+    rows.push([p ? `Lat ${p.latitude.toFixed(6)} · Lon ${p.longitude.toFixed(6)} · ±${Math.round(p.accuracy)} m` : 'Localização não disponível', F(u * .9), u * 1.12]);
+    rows.push([label, F(u * .9), u * 1.12]);
+    let w = 0;
+    rows.forEach(r => { ctx.font = r[1]; w = Math.max(w, ctx.measureText(r[0]).width); });
+    const qw = Math.min(w, maxW - 2 * pd) + 2 * pd, qh = rows.reduce((a2, r) => a2 + r[2], 0) + 2 * pd;
+    const x = Math.round(u * .8), y = Math.round(H - qh - u * .8);
+    ctx.fillStyle = 'rgba(0,0,0,.5)'; rr(x, y, qw, qh, u * .6); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.textBaseline = 'top'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = u * .15;
+    let cy = y + pd;
+    rows.forEach(r => { ctx.font = r[1]; ctx.fillText(r[0], x + pd, cy, qw - 2 * pd); cy += r[2]; });
+  }
   ctx.restore();
 }
 
@@ -682,23 +923,25 @@ function openEditor(src, info, j) {
   base.getContext('2d').drawImage(src, 0, 0, W, H);
   const label = `${D[si][0]} · Defensa ${id}`;
   const shapes = []; let tool = 'arrow', color = '#ff2a2a', cur = null;
-  const lw = Math.max(5, Math.round(Math.min(W, H) / 110));
+  const lw = Math.max(10, Math.round(Math.min(W, H) / 48));
   const box = document.createElement('div');
   box.id = 'ed';
-  box.innerHTML = `<div class="ed-top"><b>Marcar problemas</b> · seta, círculo ou desenho livre (opcional)</div>
+  box.innerHTML = `<div class="ed-top"><b>Marcar problemas</b> · toque numa marca para mover/editar · seta com borda grossa</div>
     <canvas id="edC"></canvas>
     <div class="ed-tools">
       <button data-tool="arrow" class="on">➜ Seta</button><button data-tool="circle">◯ Círculo</button><button data-tool="pen">✎ Livre</button>
       ${['#ff2a2a', '#ffd400', '#22c55e', '#ffffff'].map((c, i) => `<button class="col ${i ? '' : 'on'}" data-col="${c}" style="background:${c}" aria-label="Cor"></button>`).join('')}
-      <button id="edUndo">Desfazer</button><button id="edClear">Limpar</button>
+      <button id="edRotate" title="Girar a seta selecionada">↻ Girar seta</button><button id="edUndo">Desfazer</button><button id="edClear">Limpar</button>
     </div>
     <div class="ed-bar"><button class="btn secondary" id="edCancel">Descartar</button><button class="btn" id="edOk">Salvar foto</button></div>`;
   document.body.appendChild(box);
   const cv = box.querySelector('#edC'), ctx = cv.getContext('2d');
   cv.width = W; cv.height = H;
+  let selected = -1, mode = null, lastX = 0, lastY = 0;
   const render = () => {
     ctx.drawImage(base, 0, 0);
-    shapes.concat(cur ? [cur] : []).forEach(s => drawShape(ctx, s, lw));
+    shapes.forEach((s, i) => drawShape(ctx, s, lw, i === selected));
+    if (cur) drawShape(ctx, cur, lw, false);
     drawStamp(ctx, W, H, info, label);
   };
   render();
@@ -707,27 +950,97 @@ function openEditor(src, info, j) {
     e.preventDefault();
     try { cv.setPointerCapture(e.pointerId); } catch (_) {}
     const [x, y] = pt(e);
+    lastX = x; lastY = y;
+    let hit = -1, handle = null;
+    // se já há seleção, prioriza handles da selecionada
+    if (selected >= 0 && shapes[selected]) {
+      const h0 = hitShape(shapes[selected], x, y, lw, true);
+      if (h0 === 'h1' || h0 === 'h2') { hit = selected; handle = h0; }
+      else if (h0) { hit = selected; handle = true; }
+    }
+    if (hit < 0) {
+      for (let i = shapes.length - 1; i >= 0; i--) {
+        const h = hitShape(shapes[i], x, y, lw, false);
+        if (h) { hit = i; handle = h; break; }
+      }
+    }
+    if (hit >= 0) {
+      selected = hit;
+      if (handle === 'h1') mode = 'h1';
+      else if (handle === 'h2') mode = 'h2';
+      else mode = 'move';
+      cur = null;
+      render();
+      return;
+    }
+    selected = -1;
+    mode = 'draw';
     cur = tool === 'pen' ? { k: 'pen', c: color, pts: [[x, y]] } : { k: tool, c: color, x1: x, y1: y, x2: x, y2: y };
     render();
   });
   cv.addEventListener('pointermove', e => {
-    if (!cur) return;
     e.preventDefault();
     const [x, y] = pt(e);
-    if (cur.k === 'pen') cur.pts.push([x, y]); else { cur.x2 = x; cur.y2 = y; }
-    render();
+    if (mode === 'draw' && cur) {
+      if (cur.k === 'pen') cur.pts.push([x, y]); else { cur.x2 = x; cur.y2 = y; }
+      render();
+      return;
+    }
+    if (selected >= 0 && shapes[selected]) {
+      const s = shapes[selected];
+      const dx = x - lastX, dy = y - lastY;
+      if (mode === 'move') {
+        if (s.k === 'pen' && s.pts) s.pts.forEach(p => { p[0] += dx; p[1] += dy; });
+        else { s.x1 += dx; s.y1 += dy; s.x2 += dx; s.y2 += dy; }
+      } else if (mode === 'h1') { s.x1 = x; s.y1 = y; }
+      else if (mode === 'h2') { s.x2 = x; s.y2 = y; }
+      lastX = x; lastY = y;
+      render();
+    }
   });
-  const end = () => { if (cur) { shapes.push(cur); cur = null; render(); } };
+  const end = () => {
+    if (mode === 'draw' && cur) {
+      if (cur.k === 'pen' ? (cur.pts && cur.pts.length > 1) : (Math.hypot(cur.x2 - cur.x1, cur.y2 - cur.y1) > 8)) {
+        shapes.push(cur);
+        selected = shapes.length - 1;
+      }
+      cur = null;
+    }
+    mode = null;
+    render();
+  };
   cv.addEventListener('pointerup', end);
   cv.addEventListener('pointercancel', end);
-  box.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { tool = b.dataset.tool; box.querySelectorAll('[data-tool]').forEach(x => x.classList.toggle('on', x === b)); });
-  box.querySelectorAll('[data-col]').forEach(b => b.onclick = () => { color = b.dataset.col; box.querySelectorAll('[data-col]').forEach(x => x.classList.toggle('on', x === b)); });
-  box.querySelector('#edUndo').onclick = () => { shapes.pop(); render(); };
-  box.querySelector('#edClear').onclick = () => { shapes.length = 0; render(); };
+  box.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { tool = b.dataset.tool; selected = -1; box.querySelectorAll('[data-tool]').forEach(x => x.classList.toggle('on', x === b)); render(); });
+  box.querySelectorAll('[data-col]').forEach(b => b.onclick = () => {
+    color = b.dataset.col;
+    box.querySelectorAll('[data-col]').forEach(x => x.classList.toggle('on', x === b));
+    if (selected >= 0 && shapes[selected]) { shapes[selected].c = color; render(); }
+  });
+  box.querySelector('#edRotate').onclick = () => {
+    if (selected < 0 || !shapes[selected] || shapes[selected].k !== 'arrow') {
+      alert('Selecione uma seta para girá-la.');
+      return;
+    }
+    const a = shapes[selected];
+    const mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
+    const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
+    // Rotaciona 90 graus ao redor do centro, mantendo o comprimento.
+    a.x1 = mx + dy / 2; a.y1 = my - dx / 2;
+    a.x2 = mx - dy / 2; a.y2 = my + dx / 2;
+    render();
+  };
+  box.querySelector('#edUndo').onclick = () => { if (selected >= 0) { shapes.splice(selected, 1); selected = -1; } else shapes.pop(); render(); };
+  box.querySelector('#edClear').onclick = () => { shapes.length = 0; selected = -1; render(); };
   box.querySelector('#edCancel').onclick = () => { if (!shapes.length || confirm('Descartar esta foto?')) box.remove(); };
   box.querySelector('#edOk').onclick = async () => {
     const v = current.v, p = info.pos && info.pos.coords;
+    const previousSelection = selected;
+    selected = -1;
+    cur = null;
+    render(); // Não incorpora alças/borda de seleção na foto final.
     v.photos[j] = cv.toDataURL('image/jpeg', .92);
+    selected = previousSelection;
     v.photoMeta[j] = {
       date: `${WD[info.now.getDay()]}, ${fmtD(info.now)} ${fmtT(info.now)}`,
       location: p ? `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)} (±${Math.round(p.accuracy)} m)` : 'GPS indisponível',
@@ -762,7 +1075,9 @@ async function startLive(j) {
   try { await vid.play(); } catch (_) {}
   const tick = () => {
     const d = new Date(), p = geo.pos && geo.pos.coords;
-    inf.innerHTML = `<span class="t">${fmtT(d)}</span>${WD[d.getDay()]}, ${fmtD(d)}<br>${esc(p ? (addrOf(p) || (navigator.onLine ? 'Buscando endereço…' : 'Endereço indisponível (sem internet)')) : 'Aguardando GPS…')}<br>${p ? `Lat ${p.latitude.toFixed(6)} · Lon ${p.longitude.toFixed(6)} · ±${Math.round(p.accuracy)} m` : 'Localização não disponível'}`;
+    inf.innerHTML = `<div class="c1"><span class="t">${fmtT(d)}</span>${WD[d.getDay()]}, ${fmtD(d)}</div>
+      <div class="c2">${esc(p ? (addrOf(p) || (navigator.onLine ? 'Buscando endereço…' : 'Endereço indisponível (sem internet)')) : 'Aguardando GPS…')}<br>${esc(D[current.si][0])} · Defensa ${esc(current.id)}</div>
+      <div class="c3">${p ? `Lat ${p.latitude.toFixed(6)}<br>Lon ${p.longitude.toFixed(6)}<br>±${Math.round(p.accuracy)} m` : 'Localização<br>não disponível'}</div>`;
   };
   tick();
   const iv = setInterval(tick, 1000);
@@ -797,6 +1112,8 @@ function settingsPage() {
     `<div class="topline"><button class="btn secondary" data-a="home">‹ Início</button><h2>Configurações e materiais</h2></div>
     <p class="muted">Adicione os arquivos oficiais. Eles serão armazenados localmente neste aparelho e permanecem entre sessões.</p>
     <div class="card">
+      <label>Contratante</label>
+      <input type="text" id="contractor" value="${esc(settings.contractor || 'Autoridade Portuária de Santos')}" placeholder="Autoridade Portuária de Santos">
       <label>Contrato n°</label>
       <input type="text" id="contractNumber" value="${esc(contract)}" placeholder="SPA/12.2025">
       <label>Nome do inspetor</label>
@@ -827,6 +1144,11 @@ function settingsPage() {
     settings.contractNumber = val;
     await put('settings', 'contractNumber', val);
   });
+  document.getElementById('contractor').addEventListener('change', async e => {
+    const val = e.target.value.trim() || 'Autoridade Portuária de Santos';
+    settings.contractor = val;
+    await put('settings', 'contractor', val);
+  });
   const nameInput = document.getElementById('inspectorName');
   nameInput.addEventListener('change', async () => {
     const name = nameInput.value.trim() || 'Hamilton';
@@ -837,6 +1159,7 @@ function settingsPage() {
     else block.classList.remove('hidden');
   });
 }
+
 
 async function loadPreviews() {
   for (const id of ['logoCopabo', 'logoPorto', 'signature', 'signatureCustom', ...Object.keys(M)]) {
@@ -861,7 +1184,7 @@ async function exportPage() {
         <option value="all">Todos os setores</option>
         ${D.map((s, i) => `<option value="${i}">${esc(s[0])}</option>`).join('')}
       </select>
-      <label style="margin-top:12px"><input type="checkbox" id="incomplete" style="width:auto"> Incluir inspeções com menos de quatro fotos</label>
+      <label style="margin-top:12px"><input type="checkbox" id="incomplete" style="width:auto"> Incluir inspeções com menos de três fotos</label>
       <p class="muted">O PDF é gerado direto no aparelho (uma folha A4 paisagem por defensa). Ao terminar, use “Compartilhar / Salvar” ou “Abrir PDF”.</p>
       <button class="btn full" data-a="printall">Gerar PDF</button>
     </div>`;
@@ -888,7 +1211,7 @@ async function getInspectorInfo() {
    Cada folha é desenhada em canvas (297x210 mm) e embutida em um PDF real.
    Funciona offline, sem bibliotecas externas.
    =================================================================== */
-const PW = 297, PH = 210, K = 8; // 8 px por mm => 2376 x 1680 px (~203 dpi)
+const PW = 297, PH = 210, K = 11; // 11 px por mm => 3267 x 2310 px (~280 dpi)
 const mm = v => v * K;
 const FONT = (s, b) => `${b ? 'bold ' : ''}${(s * K).toFixed(1)}px Arial, Helvetica, sans-serif`;
 const fmtISO = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s.split('-').reverse().join('/') : (s || '');
@@ -943,6 +1266,31 @@ function drawContain(ctx, img, x, y, w, h, align) {
   ctx.drawImage(img, dx, mm(y) + (mm(h) - dh) / 2, dw, dh);
 }
 
+function trimWhite(img) {
+  if (!img) return null;
+  const W = img.width, H = img.height, c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(img, 0, 0);
+  const px = x.getImageData(0, 0, W, H).data;
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let y = 0; y < H; y++) for (let xx = 0; xx < W; xx++) {
+    const i = (y * W + xx) * 4;
+    if (px[i + 3] > 20 && (px[i] < 215 || px[i + 1] < 215 || px[i + 2] < 215)) {
+      if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+  }
+  if (x1 < 0) return img;
+  const p = Math.round(Math.max(W, H) * 0.008);
+  x0 = Math.max(0, x0 - p); y0 = Math.max(0, y0 - p); x1 = Math.min(W - 1, x1 + p); y1 = Math.min(H - 1, y1 + p);
+  const o = document.createElement('canvas');
+  o.width = x1 - x0 + 1; o.height = y1 - y0 + 1;
+  const ox = o.getContext('2d');
+  ox.fillStyle = '#fff'; ox.fillRect(0, 0, o.width, o.height);
+  ox.drawImage(c, -x0, -y0);
+  return o;
+}
+
 function renderPage(ctx, d) {
   const W = mm(PW), H = mm(PH);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -967,57 +1315,61 @@ function renderPage(ctx, d) {
 
   const X0 = 6, Y0 = 6, CW = 285;
 
-  /* ---------- Cabeçalho ---------- */
-  const LW = 62, LH = 16;
+  /* ---------- Cabeçalho (logos grandes) ---------- */
+  const LH = 20, LW = 92;
+  const dw = im => im ? Math.min(LW, LH * im.width / im.height) : 30;
   if (d.logo1) drawContain(ctx, d.logo1, X0, Y0, LW, LH, 'left');
-  else T('COPABO INFRA', X0, Y0 + 5, 4, { b: 1 });
+  else T('COPABO INFRA', X0, Y0 + 6, 5.5, { b: 1 });
   if (d.logo2) drawContain(ctx, d.logo2, X0 + CW - LW, Y0, LW, LH, 'right');
-  else T('APS', X0 + CW, Y0 + 5, 4, { b: 1, a: 'right' });
-  const title = 'FOLHA DE INSPEÇÃO TÉCNICA DE SISTEMAS DE DEFENSAS';
-  let tfs = 4.4;
-  ctx.font = FONT(tfs, 1);
-  while (ctx.measureText(title).width > mm(CW - 2 * LW - 4) && tfs > 2.5) { tfs -= 0.1; ctx.font = FONT(tfs, 1); }
-  T(title, X0 + CW / 2, Y0 + (LH - tfs * 1.2) / 2, tfs, { b: 1, a: 'center' });
-  Ln(X0, Y0 + LH + 1.5, X0 + CW, Y0 + LH + 1.5, '#222', 0.45);
+  else T('APS', X0 + CW, Y0 + 6, 5.5, { b: 1, a: 'right' });
+  const tx1 = X0 + dw(d.logo1) + 4, tx2 = X0 + CW - dw(d.logo2) - 4;
+  const tf = fitWrap(ctx, 'FOLHA DE INSPEÇÃO TÉCNICA DE SISTEMAS DE DEFENSAS', tx2 - tx1, 2, 4.8, 2.8, true);
+  const tH = tf.lines.length * tf.fs * 1.25;
+  tf.lines.forEach((ln, k) => T(ln, (tx1 + tx2) / 2, Y0 + (LH - tH) / 2 + k * tf.fs * 1.25, tf.fs, { b: 1, a: 'center' }));
+  Ln(X0, Y0 + LH + 1.2, X0 + CW, Y0 + LH + 1.2, '#222', 0.45);
 
   /* ---------- Metadados ---------- */
-  const my = 25.2, mh = 11.5, mg = 1, mw = (CW - 7 * mg) / 8;
+  const my = 28.8, mh = 11.3, mg = 1, mw = (CW - 7 * mg) / 8;
   d.meta.forEach((c, i) => {
     const cx = X0 + i * (mw + mg);
     R(cx, my, mw, mh, c.bg || null, '#888', 0.2);
-    T(c.l.toUpperCase(), cx + 1, my + 0.8, 1.9, { b: 1, c: '#555' });
-    const f = fitWrap(ctx, c.v, mw - 2, 2, 2.9, 1.8, false);
-    f.lines.forEach((ln, k) => T(ln, cx + 1, my + 3.5 + k * f.fs * 1.18, f.fs));
+    T(c.l.toUpperCase(), cx + 1, my + 0.8, 1.9, { b: 1, c: c.fg ? '#f6d5d5' : '#555' });
+    const f = fitWrap(ctx, c.v, mw - 2, 2, 2.9, 1.8, !!c.fg);
+    f.lines.forEach((ln, k) => T(ln, cx + 1, my + 3.5 + k * f.fs * 1.18, f.fs, { b: !!c.fg, c: c.fg || '#111' }));
   });
 
   /* ---------- Bloco principal ---------- */
-  const mainY = 38.5, bottomY = 146, mainH = bottomY - 2 - mainY;
-  const leftW = 84, gap = 3, rightX = X0 + leftW + gap, rightW = CW - leftW - gap;
+  const mainY = my + mh + 1.7, bottomY = 137.5, mainH = bottomY - 2 - mainY;
+  const useDiag = !d.noDiagram;
+  const leftW = useDiag ? 84 : 0, gap = useDiag ? 3 : 0, rightX = X0 + leftW + gap, rightW = CW - leftW - gap;
 
-  // Coluna esquerda: diagrama + observações
-  R(X0, mainY, leftW, mainH, '#fff', '#888', 0.2);
-  T('DIAGRAMA ESQUEMÁTICO', X0 + leftW / 2, mainY + 1.3, 2.6, { b: 1, c: '#123d59', a: 'center' });
-  Ln(X0 + 1, mainY + 5.2, X0 + leftW - 1, mainY + 5.2, '#ccc', 0.2);
-  let notesH = 0;
-  if (d.notes) {
-    const nf = fitWrap(ctx, 'Observações: ' + d.notes, leftW - 4, 8, 2.4, 1.8, false);
-    notesH = nf.lines.length * nf.fs * 1.2 + 2;
-    const ny = mainY + mainH - notesH - 1;
-    R(X0 + 1, ny, leftW - 2, notesH, '#fafafa', '#ccc', 0.15);
-    nf.lines.forEach((ln, k) => T(ln, X0 + 2, ny + 1 + k * nf.fs * 1.2, nf.fs));
-    notesH += 1.5;
+  if (useDiag) {
+    R(X0, mainY, leftW, mainH, '#fff', '#888', 0.2);
+    T('DIAGRAMA ESQUEMÁTICO', X0 + leftW / 2, mainY + 1.3, 2.6, { b: 1, c: '#123d59', a: 'center' });
+    Ln(X0 + 1, mainY + 5.2, X0 + leftW - 1, mainY + 5.2, '#ccc', 0.2);
+    let notesH = 0;
+    if (d.notes) {
+      const nf = fitWrap(ctx, 'Observações: ' + d.notes, leftW - 4, 8, 2.4, 1.8, false);
+      notesH = nf.lines.length * nf.fs * 1.2 + 2;
+      const ny = mainY + mainH - notesH - 1;
+      R(X0 + 1, ny, leftW - 2, notesH, '#fafafa', '#ccc', 0.15);
+      nf.lines.forEach((ln, k) => T(ln, X0 + 2, ny + 1 + k * nf.fs * 1.2, nf.fs));
+      notesH += 1.5;
+    }
+    const dY = mainY + 6, dH = mainH - 7 - notesH;
+    if (d.diagram) drawContain(ctx, d.diagram, X0 + 1, dY, leftW - 2, dH);
+    else T('Diagrama não cadastrado', X0 + leftW / 2, dY + dH / 2 - 1.5, 2.8, { c: '#777', a: 'center' });
   }
-  const dY = mainY + 6, dH = mainH - 7 - notesH;
-  if (d.diagram) drawContain(ctx, d.diagram, X0 + 1, dY, leftW - 2, dH);
-  else T('Diagrama não cadastrado', X0 + leftW / 2, dY + dH / 2 - 1.5, 2.8, { c: '#777', a: 'center' });
 
-  // Coluna direita: tabela de componentes
-  const cols = [8, 67, 15, rightW - 8 - 67 - 15];
+  const useQuantity = d.useQuantity !== false;
+  const cols = useQuantity ? (useDiag ? [7, 12, 58, 14, rightW - 7 - 12 - 58 - 14] : [8, 16, 105, 22, rightW - 8 - 16 - 105 - 22]) : (useDiag ? [8, 72, 14, rightW - 8 - 72 - 14] : [10, 135, 24, rightW - 10 - 135 - 24]);
   const layoutTable = fs => {
     const lh = fs * 1.2, pad = 1.3;
     const rows = d.rows.map(r => {
-      const dl = wrapLines(ctx, r.desc, FONT(fs), mm(cols[1] - 2));
-      const rl = wrapLines(ctx, r.res, FONT(fs), mm(cols[3] - 2));
+      const descCol = useQuantity ? 2 : 1;
+      const resCol = useQuantity ? 4 : 3;
+      const dl = wrapLines(ctx, r.desc, FONT(fs), mm(cols[descCol] - 2));
+      const rl = wrapLines(ctx, r.res, FONT(fs), mm(cols[resCol] - 2));
       return { dl, rl, h: Math.max(dl.length, rl.length, 1) * lh + pad };
     });
     const hdrH = 2 * lh + pad;
@@ -1027,35 +1379,43 @@ function renderPage(ctx, d) {
   while (Lt.total > mainH && fs > 1.4) { fs -= 0.05; Lt = layoutTable(fs); }
 
   let ty = mainY, tx = rightX;
-  const heads = ['POS', 'DESCRIÇÃO', 'QTD. AVARIADA', 'RESULTADO DA INSPEÇÃO'];
+  const heads = useQuantity ? ['POS', 'QUANT.', 'DESCRIÇÃO', 'QTD. AVARIADA', 'RESULTADO DA INSPEÇÃO'] : ['POS', 'DESCRIÇÃO', 'QTD. AVARIADA', 'RESULTADO DA INSPEÇÃO'];
   const hfs = fs * 0.92;
   let cxp = tx;
-  heads.forEach((h, i) => {
+  heads.forEach((hd, i) => {
     R(cxp, ty, cols[i], Lt.hdrH, '#eef2f5', '#888', 0.15);
-    const hl = wrapLines(ctx, h, FONT(hfs, 1), mm(cols[i] - 1));
+    const hl = wrapLines(ctx, hd, FONT(hfs, 1), mm(cols[i] - 1));
     const startY = ty + (Lt.hdrH - hl.length * Lt.lh) / 2 + 0.1;
-    hl.forEach((ln, k) => T(ln, i === 1 || i === 3 ? cxp + 1 : cxp + cols[i] / 2, startY + k * Lt.lh, hfs, { b: 1, a: i === 1 || i === 3 ? 'left' : 'center' }));
+    const leftAligned = useQuantity ? (i === 2 || i === 4) : (i === 1 || i === 3);
+    hl.forEach((ln, k) => T(ln, leftAligned ? cxp + 1 : cxp + cols[i] / 2, startY + k * Lt.lh, hfs, { b: 1, a: leftAligned ? 'left' : 'center' }));
     cxp += cols[i];
   });
   ty += Lt.hdrH;
   d.rows.forEach((r, j) => {
-    const L = Lt.rows[j];
+    const Lr = Lt.rows[j];
     let cx = tx;
     cols.forEach((w, i) => {
-      R(cx, ty, w, L.h, i === 3 && r.bg ? r.bg : null, '#888', 0.15);
+      R(cx, ty, w, Lr.h, i === 3 && r.bg ? r.bg : null, '#888', 0.15);
       cx += w;
     });
     const y0 = ty + Lt.pad / 2;
     T(j + 1, tx + cols[0] / 2, y0, fs, { a: 'center' });
-    L.dl.forEach((ln, k) => T(ln, tx + cols[0] + 1, y0 + k * Lt.lh, fs));
-    T(r.q, tx + cols[0] + cols[1] + cols[2] / 2, y0, fs, { a: 'center' });
-    L.rl.forEach((ln, k) => T(ln, tx + cols[0] + cols[1] + cols[2] + 1, y0 + k * Lt.lh, fs));
-    ty += L.h;
+    if (useQuantity) {
+      T(r.stock, tx + cols[0] + cols[1] / 2, y0, fs, { a: 'center' });
+      Lr.dl.forEach((ln, k) => T(ln, tx + cols[0] + cols[1] + 1, y0 + k * Lt.lh, fs));
+      T(r.q, tx + cols[0] + cols[1] + cols[2] + cols[3] / 2, y0, fs, { a: 'center' });
+      Lr.rl.forEach((ln, k) => T(ln, tx + cols[0] + cols[1] + cols[2] + cols[3] + 1, y0 + k * Lt.lh, fs));
+    } else {
+      Lr.dl.forEach((ln, k) => T(ln, tx + cols[0] + 1, y0 + k * Lt.lh, fs));
+      T(r.q, tx + cols[0] + cols[1] + cols[2] / 2, y0, fs, { a: 'center' });
+      Lr.rl.forEach((ln, k) => T(ln, tx + cols[0] + cols[1] + cols[2] + 1, y0 + k * Lt.lh, fs));
+    }
+    ty += Lr.h;
   });
 
-  /* ---------- Registro fotográfico ---------- */
+  /* ---------- Registro fotográfico (3 fotos grandes) + visto ---------- */
+  const sigW = 50, pg = 3, pw = (CW - sigW - 4 - 2 * pg) / 3, py = bottomY + 3.6, ph = 54;
   T('REGISTRO FOTOGRÁFICO', X0, bottomY, 2.6, { b: 1, c: '#123d59' });
-  const pg = 3, pw = (CW - 2 * pg) / 3, py = bottomY + 3.6, ph = 30;
   d.photos.forEach((p, j) => {
     const px = X0 + j * (pw + pg);
     R(px, py, pw, ph, '#fafafa', '#aaa', 0.2);
@@ -1063,23 +1423,17 @@ function renderPage(ctx, d) {
     else T('Sem foto', px + pw / 2, py + ph / 2 - 1.3, 2.6, { c: '#777', a: 'center' });
     T(`FOTO ${j + 1} — ${p.label}`, px, py + ph + 0.8, 2.2, { b: 1, w: pw });
     if (p.meta) {
-      wrapLines(ctx, p.meta, FONT(1.9), mm(pw)).slice(0, 2).forEach((ln, k) => T(ln, px, py + ph + 3.5 + k * 2.3, 1.9, { c: '#222' }));
+      wrapLines(ctx, p.meta, FONT(1.9), mm(pw)).slice(0, 2).forEach((ln, k) => T(ln, px, py + ph + 3.4 + k * 2.3, 1.9, { c: '#222' }));
     }
   });
 
-  /* ---------- Assinaturas ---------- */
-  const sy = 189.2;
-  Ln(X0, sy, X0 + CW, sy, '#ccc', 0.2);
-  T(`Inspetor Copabo Infra: ${d.inspector}`, X0, sy + 1.2, 2.8);
-  if (d.sig) {
-    R(X0, sy + 4.3, 46, 10.8, '#fff', '#999', 0.2);
-    drawContain(ctx, d.sig, X0 + 0.8, sy + 5.0, 44.4, 9.4);
-  } else {
-    T('Assinatura digital não cadastrada', X0, sy + 5, 2.4, { c: '#777' });
-  }
-  T('Visto Fiscalização Cliente:', 105, sy + 9.5, 2.8);
-  Ln(139, sy + 12.6, 195, sy + 12.6, '#222', 0.2);
-  T(`Data: ${fmtISO(d.date)}`, X0 + CW, sy + 9.5, 2.8, { a: 'right' });
+  const sx = X0 + CW - sigW;
+  T('Visto Copabo Infra', sx + sigW / 2, bottomY, 2.8, { b: 1, a: 'center' });
+  R(sx, py, sigW, 31, '#fff', '#999', 0.2);
+  if (d.sig) drawContain(ctx, d.sig, sx + 1, py + 1, sigW - 2, 29);
+  else T('Assinatura digital não cadastrada', sx + sigW / 2, py + 14, 2.2, { c: '#777', a: 'center' });
+  T('Visto Fiscalização Cliente:', sx + sigW / 2, py + 35, 2.6, { a: 'center' });
+  Ln(sx + 2, py + 48, sx + sigW - 2, py + 48, '#222', 0.2);
 }
 
 const canvasToJpegBytes = (c, q) => new Promise(res => {
@@ -1168,11 +1522,12 @@ async function buildPrint(jobs) {
   showPdfBox('<b>Gerando PDF…</b><p class="muted" id="pdfProg" style="margin:8px 0 0">Preparando…</p>');
   const setProg = t => { const e = document.getElementById('pdfProg'); if (e) e.textContent = t; };
   try {
-    const logo1 = await loadImg(await asset('logoCopabo'));
-    const logo2 = await loadImg(await asset('logoPorto'));
+    const logo1 = trimWhite(await loadImg(await asset('logoCopabo')));
+    const logo2 = trimWhite(await loadImg(await asset('logoPorto')));
     const { name: inspector, sig: sigData } = await getInspectorInfo();
-    const sig = await loadImg(sigData);
+    const sig = trimWhite(await loadImg(sigData));
     const contract = (settings.contractNumber || await get('settings', 'contractNumber') || 'SPA/12.2025').trim() || 'SPA/12.2025';
+    const contractor = (settings.contractor || await get('settings', 'contractor') || 'Autoridade Portuária de Santos').trim() || 'Autoridade Portuária de Santos';
     const diagCache = {};
     const cv = document.createElement('canvas');
     cv.width = mm(PW); cv.height = mm(PH);
@@ -1190,15 +1545,22 @@ async function buildPrint(jobs) {
       const m = M[s[1]] || { i: [] };
       const crit = CRIT_AUTO[v.condition] || '—';
       const cbg = CRIT_BG[crit] || null;
+      const cfg = crit === 'Grau 3' ? '#ffffff' : null;
       if (s[1] && !(s[1] in diagCache)) diagCache[s[1]] = await loadImg(await asset('diagram_' + s[1]));
-      const rows = m.i.map((p, j) => {
-        const status = v.parts[j] || 'Não avaliado';
-        const note = v.partNotes[j] ? ` — ${String(v.partNotes[j]).slice(0, 70)}` : '';
-        const q0 = v.partQty && v.partQty[j];
-        return { desc: p[1], q: (q0 === undefined || q0 === null || q0 === '') ? '—' : String(q0), res: status + note, bg: PCOL[(v.partColors || {})[j]] || null };
+      const mats = materialsOf(si, v);
+      const rows = mats.map((m) => {
+        const key = m.src + ':' + m.idx;
+        const legacy = m.src === 'base' ? m.idx : 'e' + m.idx;
+        const status = v.parts[key] || v.parts[legacy] || 'Não avaliado';
+        const pn = v.partNotes[key] || v.partNotes[legacy];
+        const note = pn ? ` — ${String(pn).slice(0, 70)}` : '';
+        const q0 = (v.partQty && (v.partQty[key] ?? v.partQty[legacy]));
+        const stock0 = (v.partStockQty && (v.partStockQty[key] ?? v.partStockQty[legacy])) ?? (M[s[1]]?.i?.[m.idx]?.[0]);
+        const col = (v.partColors || {})[key] || (v.partColors || {})[legacy];
+        return { desc: m.name, stock: (stock0 === undefined || stock0 === null || stock0 === '') ? '—' : String(stock0), q: (q0 === undefined || q0 === null || q0 === '') ? '—' : String(q0), res: status + note, bg: PCOL[col] || null };
       });
       const photos = [];
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < L.length; j++) {
         const pm = v.photoMeta[j];
         photos.push({ img: await loadImg(v.photos[j]), label: L[j], meta: pm ? `${pm.date} · ${pm.location}` : '' });
       }
@@ -1206,16 +1568,18 @@ async function buildPrint(jobs) {
         logo1, logo2, sig, inspector,
         date: v.inspectionDate || '',
         notes: v.notes || '',
-        diagram: s[1] ? diagCache[s[1]] : null,
+        noDiagram: !!v.noDiagram,
+        useQuantity: !(typeof v.noQuantity === 'boolean' ? v.noQuantity : !!((settings.customSectors || []).find(cs => cs.key === s[1]) || {}).noQuantity),
+        diagram: (!v.noDiagram && s[1]) ? diagCache[s[1]] : null,
         rows, photos,
         meta: [
-          { l: 'Contratante', v: 'Autoridade Portuária de Santos' },
+          { l: 'Contratante', v: contractor },
           { l: 'Berço', v: bInfo.berco },
           { l: 'Defensa', v: defLabel },
           { l: 'Contrato n°', v: contract },
           { l: 'Data de inspeção', v: fmtISO(v.inspectionDate || '') },
-          { l: 'Condição', v: v.condition === 'Selecionar' ? '—' : v.condition, bg: cbg },
-          { l: 'Criticidade', v: crit, bg: cbg },
+          { l: 'Condição', v: v.condition === 'Selecionar' ? '—' : v.condition, bg: cbg, fg: cfg },
+          { l: 'Criticidade', v: crit, bg: cbg, fg: cfg },
           { l: 'Inspetor Copabo Infra', v: inspector }
         ]
       });
@@ -1275,11 +1639,89 @@ app.addEventListener('click', async e => {
   const a = b.dataset.a;
   const si = Number(b.dataset.si);
 
-  if (a === 'home') home();
-  if (a === 'start') sectors();
-  if (a === 'sector') sector(si);
-  if (a === 'def') openDef(Number(b.dataset.si), b.dataset.id);
+  if (a === 'home') { ensureToTop(false); home(); }
+  if (a === 'start') { ensureToTop(false); sectors(); }
+  if (a === 'sector') { const ssi = Number(b.dataset.si); ensureToTop(false); sector(Number.isFinite(ssi) ? ssi : current.si); }
+  if (a === 'def') { openDef(Number(b.dataset.si), b.dataset.id); }
+  if (a === 'addsector') addSectorPage();
+  if (a === 'addmat') {
+    const name = prompt('Nome do novo material:')?.trim();
+    if (!name) return;
+    let qty = '';
+    if (!current.v.noQuantity) {
+      const qtyText = prompt('Quantidade total deste material:');
+      if (qtyText === null) return;
+      qty = qtyText.trim();
+      if (qty && !/^[0-9]+$/.test(qty)) return alert('Informe uma quantidade inteira válida.');
+    }
+    current.v.extraMaterials = current.v.extraMaterials || [];
+    current.v.partStockQty = current.v.partStockQty || {};
+    const newIdx = current.v.extraMaterials.length;
+    current.v.extraMaterials.push(name);
+    if (qty !== '') current.v.partStockQty['extra:' + newIdx] = qty;
+    await put('records', key(current.si, current.id), current.v);
+    paintDef();
+  }
+  if (b.dataset.editstock !== undefined) {
+    const input = app.querySelector(`[data-stockqty="${CSS.escape(b.dataset.editstock)}"]`);
+    if (input) { input.readOnly = false; input.focus(); input.select(); }
+    return;
+  }
+  if (a === 'rmmatsel') {
+    const mats = materialsOf(current.si, current.v);
+    if (!mats.length) return alert('Não há materiais cadastrados para remover.');
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-backdrop';
+    overlay.innerHTML = `<div class="modal" role="dialog" aria-modal="true">
+      <h2>Remover materiais</h2>
+      <p class="muted">Selecione os materiais que deseja remover desta defensa.</p>
+      <div class="modal-list">${mats.map((m,j)=>`<label><input type="checkbox" class="remove-mat-choice" data-src="${m.src}" data-idx="${m.idx}"><span>${esc(m.name)}</span></label>`).join('')}</div>
+      <div class="actions"><button type="button" class="btn secondary remove-confirm-btn" id="confirmRemoveMats">Remover selecionados</button><button type="button" class="btn secondary" id="cancelRemoveMats">Cancelar</button></div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#cancelRemoveMats').onclick = () => overlay.remove();
+    overlay.onclick = ev => { if (ev.target === overlay) overlay.remove(); };
+    overlay.querySelector('#confirmRemoveMats').onclick = async () => {
+      const boxes = [...overlay.querySelectorAll('.remove-mat-choice:checked')];
+      if (!boxes.length) return alert('Selecione ao menos um material.');
+      const confirmLayer = document.createElement('div');
+      confirmLayer.className = 'modal-backdrop';
+      confirmLayer.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><h2>Confirmar exclusão</h2><p>Deseja realmente remover ${boxes.length} material(is) selecionado(s) desta defensa?</p><div class="actions"><button type="button" class="btn danger" id="yesDeleteMats">Sim, remover</button><button type="button" class="btn secondary" id="noDeleteMats">Cancelar</button></div></div>`;
+      document.body.appendChild(confirmLayer);
+      confirmLayer.querySelector('#noDeleteMats').onclick = () => confirmLayer.remove();
+      confirmLayer.querySelector('#yesDeleteMats').onclick = async () => {
+      confirmLayer.remove();
+      const extraIdx = boxes.filter(x => x.dataset.src === 'extra').map(x => +x.dataset.idx).sort((a,b) => b-a);
+      const baseIdx = boxes.filter(x => x.dataset.src === 'base').map(x => +x.dataset.idx);
+      current.v.extraMaterials = current.v.extraMaterials || [];
+      current.v.removedParts = current.v.removedParts || [];
+      for (const i of extraIdx) current.v.extraMaterials.splice(i,1);
+      for (const i of baseIdx) if (!current.v.removedParts.includes(i)) current.v.removedParts.push(i);
+      await put('records', key(current.si,current.id), current.v);
+      overlay.remove();
+      paintDef();
+      };
+    };
+  }
+  if (a === 'delsector') deleteCustomSector(Number(b.dataset.si));
+  if (a === 'rendef') renameDefensa(current.si, current.id);
+  if (a === 'rensec') renameSector(Number(b.dataset.si));
   if (a === 'settings') settingsPage();
+  if (a === 'clearsec') {
+    const ids = list(si).map(x => x[0]);
+    const t = prompt(`Isto apaga TODAS as fotos, condições, observações, quantidades e cores das ${ids.length} defensas do setor "${D[si][0]}". Não pode ser desfeito.\n\nDigite LIMPAR para confirmar:`);
+    if (!t || t.trim().toUpperCase() !== 'LIMPAR') return;
+    for (const id of ids) {
+      const oldRecord = normalizeRecord(await get('records', key(si, id)) || blank());
+      const fresh = blank();
+      fresh.extraMaterials = (oldRecord.extraMaterials || []).slice();
+      fresh.removedParts = (oldRecord.removedParts || []).slice();
+      fresh.partStockQty = { ...(oldRecord.partStockQty || {}) };
+      fresh.noDiagram = !!oldRecord.noDiagram;
+      await put('records', key(si, id), fresh);
+    }
+    sector(si);
+  }
   if (a === 'export') exportPage();
   if (a === 'suggest') {
     location.href = 'mailto:lorenzo.marchetti@copaboinfra.com.br,lorenzo.hayama@gmail.com?subject=' +
@@ -1295,8 +1737,16 @@ app.addEventListener('click', async e => {
   }
   if (a === 'pal') openPalette(b, b.dataset.j);
   if (a === 'reset') {
-    if (!confirm('Limpar TODAS as informações desta defensa (fotos, condição, observações, quantidades e cores)? Isso não pode ser desfeito.')) return;
+    if (!confirm('Limpar fotos, condição, observações, quantidades e cores desta defensa? Os materiais cadastrados serão mantidos.')) return;
+    const keepExtra = (current.v.extraMaterials || []).slice();
+    const keepRemoved = (current.v.removedParts || []).slice();
+    const keepNoDiag = !!current.v.noDiagram;
+    const keepStockQty = { ...(current.v.partStockQty || {}) };
     current.v = blank();
+    current.v.extraMaterials = keepExtra;
+    current.v.removedParts = keepRemoved;
+    current.v.noDiagram = keepNoDiag;
+    current.v.partStockQty = keepStockQty;
     await put('records', key(current.si, current.id), current.v);
     paintDef();
   }
@@ -1359,7 +1809,7 @@ app.addEventListener('click', async e => {
       if (scope !== 'all' && +scope !== i) continue;
       for (const [id] of list(i)) {
         const v = await get('records', key(i, id));
-        if (v && (inc || (v.photos || []).slice(0, 3).filter(Boolean).length === 3)) {
+        if (v && (inc || (v.photos || []).slice(0, L.length).filter(Boolean).length >= L.length)) {
           jobs.push({ si: i, id, v });
         }
       }
@@ -1376,6 +1826,10 @@ app.addEventListener('click', async e => {
 
 app.addEventListener('change', async e => {
   const t = e.target;
+  if (t.dataset.stockqty !== undefined && current.v) {
+    const value = t.value.trim();
+    if (value !== '' && /^[0-9]+$/.test(value)) t.readOnly = true;
+  }
   if (t.dataset.photo !== undefined) {
     photoCapture(+t.dataset.photo, t.files[0]);
     return;
@@ -1414,9 +1868,26 @@ app.addEventListener('change', async e => {
     }
     await put('records', key(current.si, current.id), current.v);
   }
+  if (t.id === 'noDiagram' && current.v) {
+    current.v.noDiagram = !!t.checked;
+    await put('records', key(current.si, current.id), current.v);
+  }
+  if (t.id === 'noMaterialQty' && current.v) {
+    current.v.noQuantity = !!t.checked;
+    await put('records', key(current.si, current.id), current.v);
+    paintDef();
+  }
 });
 
 app.addEventListener('input', async e => {
+  if (e.target.id === 'q') {
+    const q = norm(e.target.value.trim());
+    let n = 0;
+    app.querySelectorAll('.item[data-s]').forEach(el => { const ok = !q || el.dataset.s.includes(q); el.classList.toggle('hidden', !ok); if (ok) n++; });
+    const nr = document.getElementById('noRes');
+    if (nr) nr.classList.toggle('hidden', n > 0 || !q);
+    return;
+  }
   if (e.target.id === 'notes' && current.v) {
     current.v.notes = e.target.value;
     await put('records', key(current.si, current.id), current.v);
@@ -1431,7 +1902,228 @@ app.addEventListener('input', async e => {
     current.v.partQty[e.target.dataset.partqty] = e.target.value;
     await put('records', key(current.si, current.id), current.v);
   }
+  if (e.target.dataset.stockqty !== undefined && current.v) {
+    current.v.partStockQty = current.v.partStockQty || {};
+    const value = e.target.value.trim();
+    if (value !== '' && !/^[0-9]+$/.test(value)) {
+      e.target.value = current.v.partStockQty[e.target.dataset.stockqty] ?? '';
+      return alert('Informe uma quantidade inteira válida.');
+    }
+    current.v.partStockQty[e.target.dataset.stockqty] = value;
+    await put('records', key(current.si, current.id), current.v);
+  }
 });
+
+
+function applyCustomSectors() {
+  const list = settings.customSectors || [];
+  for (const cs of list) {
+    if (!cs || !cs.key || !cs.name) continue;
+    M[cs.key] = { t: 'f', i: (cs.materials || []).map(m => Array.isArray(m) ? [m[1], m[0]] : [null, m]) };
+    const exists = D.findIndex(s => s[1] === cs.key && s[0] === cs.name);
+    const defs = (cs.defensas || []).map(id => [String(id), 'Adicionada']);
+    if (exists >= 0) D[exists][2] = defs;
+    else D.push([cs.name, cs.key, defs]);
+    if (typeof BERCO_INFO !== 'undefined') {
+      while (BERCO_INFO.length < D.length) BERCO_INFO.push({ berco: '', sigla: '' });
+      const i = D.findIndex(s => s[1] === cs.key && s[0] === cs.name);
+      if (i >= 0) BERCO_INFO[i] = { berco: cs.name, sigla: cs.sigla || '' };
+    }
+  }
+}
+
+
+async function renameDefensa(si, oldId) {
+  const neu = prompt('Novo nome/identificação da defensa:', oldId)?.trim();
+  if (!neu || neu === oldId) return;
+  if (list(si).some(x => x[0] === neu)) return alert('Já existe uma defensa com esse nome neste setor.');
+  // record
+  const rec = await get('records', key(si, oldId));
+  if (rec) {
+    await put('records', key(si, neu), rec);
+    await del('records', key(si, oldId));
+  }
+  // extra list
+  settings.extra = settings.extra || {};
+  const ex = settings.extra[si] || [];
+  const eix = ex.indexOf(oldId);
+  if (eix >= 0) { ex[eix] = neu; settings.extra[si] = ex; await put('settings', 'extra', settings.extra); }
+  // in D base list
+  const pair = D[si][2].find(x => x[0] === oldId);
+  if (pair) pair[0] = neu;
+  // custom sector defensas
+  const cs = (settings.customSectors || []).find(c => c.key === D[si][1] && c.name === D[si][0]);
+  if (cs && Array.isArray(cs.defensas)) {
+    const i = cs.defensas.indexOf(oldId);
+    if (i >= 0) { cs.defensas[i] = neu; await put('settings', 'customSectors', settings.customSectors); }
+  }
+  // Persistir renomeação também para defensas dos setores padrão após reiniciar
+  settings.defensaRenames = settings.defensaRenames || {};
+  settings.defensaRenames[si] = settings.defensaRenames[si] || {};
+  for (const k of Object.keys(settings.defensaRenames[si])) {
+    if (settings.defensaRenames[si][k] === oldId) settings.defensaRenames[si][k] = neu;
+  }
+  settings.defensaRenames[si][oldId] = neu;
+  await put('settings', 'defensaRenames', settings.defensaRenames);
+  // order
+  if (settings.order && settings.order[si]) {
+    settings.order[si] = settings.order[si].map(x => x === oldId ? neu : x);
+    await put('settings', 'order', settings.order);
+  }
+  // removed
+  if (settings.removed && settings.removed[si]) {
+    settings.removed[si] = settings.removed[si].map(x => x === oldId ? neu : x);
+    await put('settings', 'removed', settings.removed);
+  }
+  current.id = neu;
+  openDef(si, neu);
+}
+
+async function renameSector(si) {
+  const old = D[si][0];
+  const neu = prompt('Novo nome do setor:', old)?.trim();
+  if (!neu || neu === old) return;
+  if (D.some((s, i) => i !== si && s[0].toLowerCase() === neu.toLowerCase())) return alert('Já existe um setor com esse nome.');
+  D[si][0] = neu;
+  if (typeof BERCO_INFO !== 'undefined' && BERCO_INFO[si]) BERCO_INFO[si].berco = neu;
+  const cs = (settings.customSectors || []).find(c => c.key === D[si][1] && c.name === old);
+  if (cs) {
+    cs.name = neu;
+    await put('settings', 'customSectors', settings.customSectors);
+  } else {
+    // persist rename for built-in sectors
+    settings.sectorRenames = settings.sectorRenames || {};
+    settings.sectorRenames[si] = neu;
+    await put('settings', 'sectorRenames', settings.sectorRenames);
+  }
+  sector(si);
+}
+
+function addSectorPage() {
+  ensureToTop(false);
+  const state = { materials: [], defensas: [], noDiagram: false, noQuantity: false, diagramData: null, name: '' };
+  const paint = () => {
+    app.innerHTML = header() + `
+      <div class="topline"><button class="btn secondary" data-a="start">‹ Setores</button><h2>Novo setor</h2></div>
+      <div class="card">
+        <label>Nome do setor * <span class="muted">(só o setor — não altera o nome das defensas)</span></label>
+        <input type="text" id="nsName" value="${esc(state.name)}" placeholder="Ex.: Armazém 40" autocomplete="off">
+        <div style="margin:12px 0;display:grid;gap:10px">
+          <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin:0">
+            <input type="checkbox" id="nsNoQty" ${state.noQuantity ? 'checked' : ''} style="width:19px;height:19px;flex-shrink:0">
+            <b>Não usar quantidade de materiais</b>
+          </label>
+          <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin:0">
+            <input type="checkbox" id="nsNoDiag" ${state.noDiagram ? 'checked' : ''} style="width:19px;height:19px;flex-shrink:0">
+            <b>Não usar diagrama neste setor</b>
+          </label>
+        </div>
+        <label>Diagrama do setor ${state.noDiagram ? '(opcional)' : '*'}</label>
+        <input type="file" id="nsDiag" accept="image/*,application/pdf">
+        ${state.diagramData ? '<p class="muted">Diagrama selecionado ✓</p>' : '<p class="muted">Anexe PNG/JPG/PDF do diagrama</p>'}
+      </div>
+      <div class="card">
+        <h2>Materiais do setor * (mín. 1)</h2>
+        <p class="muted">Peças/componentes avaliados nas defensas deste setor.</p>
+        <ul style="padding-left:18px;margin:8px 0">${state.materials.map((m,i)=>`<li>${esc(m.name)}${state.noQuantity ? '' : ` — Quant.: ${esc(m.qty)}`} <button type="button" data-rm-mat="${i}" class="btn danger" style="padding:4px 8px;font-size:12px;margin-left:6px">Remover</button></li>`).join('') || '<li class="muted">Nenhum ainda</li>'}</ul>
+        <div class="actions">
+          <input type="text" id="nsMat" placeholder="Nome do material" style="flex:1" autocomplete="off">
+          ${state.noQuantity ? '' : '<input type="number" id="nsMatQty" min="0" step="1" placeholder="Quant." style="max-width:105px">'}
+          <button type="button" class="btn" id="nsAddMat">Adicionar material</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Defensas do setor * (mín. 1)</h2>
+        <p class="muted">Use o <b>código/nome de cada defensa</b> (ex.: 401, 402.1). Não use o nome do setor.</p>
+        <ul style="padding-left:18px;margin:8px 0">${state.defensas.map((m,i)=>`<li><b>Defensa:</b> ${esc(m)} <button type="button" data-rm-def="${i}" class="btn danger" style="padding:4px 8px;font-size:12px;margin-left:6px">Remover</button></li>`).join('') || '<li class="muted">Nenhuma ainda</li>'}</ul>
+        <div class="actions">
+          <input type="text" id="nsDef" placeholder="Código da defensa (ex.: 401)" style="flex:1" autocomplete="off">
+          <button type="button" class="btn" id="nsAddDef">Adicionar defensa</button>
+        </div>
+      </div>
+      <button class="btn full" id="nsSave">Criar setor</button>
+      <p class="muted">O setor personalizado usa o diagrama anexado. Se excluído, todas as inspeções e o diagrama dele são apagados.</p>`;
+    const $ = id => document.getElementById(id);
+    $('nsName').oninput = e => { state.name = e.target.value; };
+    $('nsNoDiag').onchange = e => { state.noDiagram = e.target.checked; paint(); };
+    $('nsNoQty').onchange = e => { state.noQuantity = e.target.checked; paint(); };
+    $('nsDiag').onchange = async e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      try {
+        const isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+        state.diagramData = isPdf ? await pdfToImage(f) : await fileData(f);
+        paint();
+      } catch (err) { alert('Falha ao ler diagrama: ' + (err.message || err)); }
+    };
+    $('nsAddMat').onclick = () => {
+      const v = ($('nsMat').value || '').trim();
+      const q = state.noQuantity ? '' : (($('nsMatQty')?.value || '').trim());
+      if (!v) return alert('Informe o nome do material.');
+      if (!state.noQuantity && (!q || !/^[0-9]+$/.test(q))) return alert('Informe a quantidade inteira do material.');
+      state.materials.push({ name: v, qty: q });
+      paint();
+    };
+    $('nsAddDef').onclick = () => {
+      const v = ($('nsDef').value || '').trim();
+      if (!v) return;
+      if (state.defensas.includes(v)) return alert('Defensa já listada.');
+      state.defensas.push(v);
+      paint();
+    };
+    app.querySelectorAll('[data-rm-mat]').forEach(b => b.onclick = () => { state.materials.splice(+b.dataset.rmMat, 1); paint(); });
+    app.querySelectorAll('[data-rm-def]').forEach(b => b.onclick = () => { state.defensas.splice(+b.dataset.rmDef, 1); paint(); });
+    $('nsSave').onclick = async () => {
+      const name = (state.name || '').trim();
+      if (!name) return alert('Informe o nome do setor.');
+      if (state.materials.length < 1) return alert('Adicione pelo menos 1 material.');
+      if (state.defensas.length < 1) return alert('Adicione pelo menos 1 defensa.');
+      if (!state.noDiagram && !state.diagramData) return alert('Anexe o diagrama ou marque “Não usar diagrama”.');
+      if (D.some(s => s[0].toLowerCase() === name.toLowerCase())) return alert('Já existe um setor com esse nome.');
+      const defs = state.defensas.map(d => String(d).trim()).filter(d => d && d.toLowerCase() !== name.toLowerCase());
+      if (!defs.length) return alert('Cadastre ao menos uma identificação de defensa diferente do nome do setor.');
+      const key = 'c' + Date.now().toString(36);
+      const cs = {
+        name, key,
+        materials: state.materials.map(m => [m.name, state.noQuantity ? null : m.qty]),
+        defensas: defs,
+        noDiagramDefault: !!state.noDiagram,
+        noQuantity: !!state.noQuantity,
+        sigla: ''
+      };
+      settings.customSectors = settings.customSectors || [];
+      settings.customSectors.push(cs);
+      await put('settings', 'customSectors', settings.customSectors);
+      if (state.diagramData) await put('settings', 'diagram_' + key, state.diagramData);
+      applyCustomSectors();
+      // default noDiagram on new defensas records optional - applied when opening blank + noDiagramDefault
+      alert('Setor criado.');
+      sectors();
+    };
+  };
+  paint();
+}
+
+async function deleteCustomSector(si) {
+  const s = D[si];
+  if (!s) return;
+  const csList = settings.customSectors || [];
+  const ix = csList.findIndex(c => c.key === s[1] && c.name === s[0]);
+  if (ix < 0) return alert('Só setores personalizados podem ser excluídos por aqui.');
+  if (!confirm('Excluir o setor "' + s[0] + '" e TODAS as inspeções/fotos/diagrama dele? Não pode ser desfeito.')) return;
+  for (const [id] of list(si)) await del('records', key(si, id));
+  await del('settings', 'diagram_' + s[1]);
+  csList.splice(ix, 1);
+  settings.customSectors = csList;
+  await put('settings', 'customSectors', csList);
+  // rebuild D entry: remove from D
+  D.splice(si, 1);
+  if (typeof BERCO_INFO !== 'undefined' && BERCO_INFO.length > si) BERCO_INFO.splice(si, 1);
+  delete M[s[1]];
+  // re-apply remaining custom (indices ok)
+  alert('Setor excluído.');
+  sectors();
+}
 
 openDB().catch(() => { noDB = true; }).then(async () => {
   settings.extra = await get('settings', 'extra') || {};
@@ -1439,6 +2131,28 @@ openDB().catch(() => { noDB = true; }).then(async () => {
   settings.order = await get('settings', 'order') || {};
   settings.inspectorName = await get('settings', 'inspectorName') || 'Hamilton';
   settings.contractNumber = await get('settings', 'contractNumber') || 'SPA/12.2025';
+  settings.contractor = await get('settings', 'contractor') || 'Autoridade Portuária de Santos';
+  settings.customSectors = await get('settings', 'customSectors') || [];
+  settings.sectorRenames = await get('settings', 'sectorRenames') || {};
+  applyCustomSectors();
+  settings.defensaRenames = await get('settings', 'defensaRenames') || {};
+  Object.keys(settings.defensaRenames || {}).forEach(k => {
+    const si = +k, renames = settings.defensaRenames[k] || {};
+    if (!D[si]) return;
+    D[si][2].forEach(pair => { if (renames[pair[0]]) pair[0] = renames[pair[0]]; });
+    if (settings.extra && settings.extra[si]) settings.extra[si] = settings.extra[si].map(id => renames[id] || id);
+    if (settings.order && settings.order[si]) settings.order[si] = settings.order[si].map(id => renames[id] || id);
+    if (settings.removed && settings.removed[si]) settings.removed[si] = settings.removed[si].map(id => renames[id] || id);
+    const cs = (settings.customSectors || []).find(c => c.key === D[si][1]);
+    if (cs && Array.isArray(cs.defensas)) cs.defensas = cs.defensas.map(id => renames[id] || id);
+  });
+  Object.keys(settings.sectorRenames || {}).forEach(k => {
+    const i = +k;
+    if (D[i] && settings.sectorRenames[k]) {
+      D[i][0] = settings.sectorRenames[k];
+      if (typeof BERCO_INFO !== 'undefined' && BERCO_INFO[i]) BERCO_INFO[i].berco = settings.sectorRenames[k];
+    }
+  });
   home();
 }).catch(e => {
   app.innerHTML = 'Não foi possível abrir o armazenamento local deste navegador.';
