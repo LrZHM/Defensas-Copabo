@@ -167,6 +167,7 @@ body.reordering{overflow:hidden;touch-action:none}
 .photo-mode-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
 .photo-mode-actions .btn{min-width:0;white-space:normal;line-height:1.2;padding:12px 8px}
 @media(max-width:420px){.photo-mode-actions{grid-template-columns:1fr}}
+ .cam-orientation-hint{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);z-index:2;background:rgba(0,0,0,.62);color:#fff;padding:8px 14px;border-radius:20px;font:600 13px system-ui;white-space:nowrap;pointer-events:none}
 </style>
 </head>
 <body>
@@ -1011,14 +1012,12 @@ function openEditor(src, info, j) {
   const lw = Math.max(10, Math.round(Math.min(W, H) / 48));
   const box = document.createElement('div');
   box.id = 'ed';
-  box.innerHTML = `<div class="ed-top"><b>Editar foto</b> · arraste a caixa para mover · alças para ampliar e girar · selecione a seta para redimensionar</div>
+  box.innerHTML = `<div class="ed-top"><b>Editar foto</b> · arraste a caixa para mover · puxe os cantos para ampliar e o controle para girar · puxe as pontas da seta para mudar seu tamanho</div>
     <canvas id="edC"></canvas>
     <div class="ed-tools">
       <button data-tool="arrow" class="on">➜ Seta</button><button data-tool="circle">◯ Círculo</button><button data-tool="pen">✎ Livre</button>
       ${['#ff2a2a', '#ffd400', '#22c55e', '#ffffff'].map((c, i) => `<button class="col ${i ? '' : 'on'}" data-col="${c}" style="background:${c}" aria-label="Cor"></button>`).join('')}
       <button id="edRotate" title="Girar a seta selecionada">↻ Girar seta</button>
-      <button id="edArrowSmaller" title="Diminuir seta selecionada">－ Seta</button>
-      <button id="edArrowBigger" title="Aumentar seta selecionada">＋ Seta</button>
       <button id="edUndo">Desfazer</button><button id="edClear">Limpar</button>
     </div>
     <div class="ed-bar"><button class="btn secondary" id="edCancel">Descartar</button><button class="btn" id="edOk">Salvar foto</button></div>`;
@@ -1230,18 +1229,6 @@ function openEditor(src, info, j) {
     box.querySelectorAll('[data-col]').forEach(x => x.classList.toggle('on', x === b));
     if (selected >= 0 && shapes[selected]) { shapes[selected].c = color; render(); }
   });
-  const scaleSelectedArrow = factor => {
-    if (selected < 0 || !shapes[selected] || shapes[selected].k !== 'arrow') {
-      alert('Selecione uma seta para alterar o tamanho.');
-      return;
-    }
-    const a=shapes[selected], mx=(a.x1+a.x2)/2, my=(a.y1+a.y2)/2;
-    a.x1=mx+(a.x1-mx)*factor; a.y1=my+(a.y1-my)*factor;
-    a.x2=mx+(a.x2-mx)*factor; a.y2=my+(a.y2-my)*factor;
-    render();
-  };
-  box.querySelector('#edArrowSmaller').onclick = () => scaleSelectedArrow(.82);
-  box.querySelector('#edArrowBigger').onclick = () => scaleSelectedArrow(1.22);
   box.querySelector('#edRotate').onclick = () => {
     if (selected < 0 || !shapes[selected] || shapes[selected].k !== 'arrow') {
       alert('Selecione uma seta para girá-la.');
@@ -1291,18 +1278,19 @@ async function startLive(j, photoMode = 'portrait') {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fallback();
   let stream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: {
-      facingMode: { ideal: 'environment' },
-      width: { ideal: wantedLandscape ? 2560 : 1440 },
-      height: { ideal: wantedLandscape ? 1440 : 2560 },
-      aspectRatio: { ideal: wantedLandscape ? 16/9 : 9/16 }
-    }, audio: false });
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }, audio: false
+    });
   } catch (e) { return fallback(); }
   const box = document.createElement('div');
   box.id = 'cam';
   box.innerHTML = `<video playsinline muted autoplay></video><canvas id="camStamp" style="position:absolute;pointer-events:none"></canvas>
+    ${wantedLandscape ? '<div class="cam-orientation-hint">Mantenha o iPhone na horizontal</div>' : ''}
     <div class="cam-bar"><button class="btn secondary" id="camX" style="min-width:96px">Cancelar</button><button id="camShot" aria-label="Capturar"></button><button class="btn secondary" id="camFlip" aria-label="Alternar câmera frontal/traseira" style="min-width:96px">⟲ Câmera</button></div>`;
   document.body.appendChild(box);
+  if (wantedLandscape && screen.orientation && screen.orientation.lock) {
+    try { await screen.orientation.lock('landscape'); } catch (_) {}
+  }
   const vid = box.querySelector('video'), stampCv = box.querySelector('#camStamp'), sctx = stampCv.getContext('2d');
   const flipBtn = box.querySelector('#camFlip');
   const label = `${D[current.si][0]} · Defensa ${current.id}`;
@@ -1321,9 +1309,8 @@ async function startLive(j, photoMode = 'portrait') {
     stampCv.style.left = (vid.offsetLeft + (cw - dw) / 2) + 'px';
     stampCv.style.top = (vid.offsetTop + (ch - dh) / 2) + 'px';
     stampCv.style.width = dw + 'px'; stampCv.style.height = dh + 'px';
-    const targetW = wantedLandscape ? Math.max(vw, vh) : Math.min(vw, vh);
-    const targetH = wantedLandscape ? Math.min(vw, vh) : Math.max(vw, vh);
-    const q = Math.min(1, 1280 / Math.max(targetW, targetH)), W = Math.round(targetW * q), H = Math.round(targetH * q);
+    const q = Math.min(1, 1280 / Math.max(vw, vh));
+    const W = Math.round(vw * q), H = Math.round(vh * q);
     if (stampCv.width !== W || stampCv.height !== H) { stampCv.width = W; stampCv.height = H; }
     sctx.clearRect(0, 0, W, H);
     const p = geo.pos && geo.pos.coords;
@@ -1357,6 +1344,7 @@ async function startLive(j, photoMode = 'portrait') {
     if (screen.orientation && screen.orientation.removeEventListener) screen.orientation.removeEventListener('change', repaintAfterRotation);
     if (window.visualViewport) window.visualViewport.removeEventListener('resize', repaintAfterRotation);
     if (ro) ro.disconnect();
+    if (screen.orientation && screen.orientation.unlock) { try { screen.orientation.unlock(); } catch (_) {} }
     stream.getTracks().forEach(t => t.stop()); stopGeo(); box.remove();
   };
 
@@ -1365,11 +1353,7 @@ async function startLive(j, photoMode = 'portrait') {
     navigator.mediaDevices.enumerateDevices().then(l => { if (l.filter(d => d.kind === 'videoinput').length < 2) flipBtn.style.visibility = 'hidden'; }).catch(() => {});
   }
   const tryStream = async vc => { try { return await navigator.mediaDevices.getUserMedia({ video: vc, audio: false }); } catch (_) { return null; } };
-  const size = {
-    width: { ideal: wantedLandscape ? 2560 : 1440 },
-    height: { ideal: wantedLandscape ? 1440 : 2560 },
-    aspectRatio: { ideal: wantedLandscape ? 16/9 : 9/16 }
-  };
+  const size = {};
   flipBtn.onclick = async () => {
     if (switching) return;
     switching = true; flipBtn.disabled = true;
@@ -1399,21 +1383,9 @@ async function startLive(j, photoMode = 'portrait') {
   box.querySelector('#camX').onclick = close;
   box.querySelector('#camShot').onclick = () => {
     if (!vid.videoWidth || switching) return;
-    const now = new Date(), raw = document.createElement('canvas');
-    raw.width = vid.videoWidth; raw.height = vid.videoHeight;
-    raw.getContext('2d').drawImage(vid, 0, 0);
-    const needsQuarterTurn = wantedLandscape ? raw.height > raw.width : raw.width > raw.height;
-    const c = document.createElement('canvas');
-    if (needsQuarterTurn) {
-      c.width = raw.height; c.height = raw.width;
-      const cx = c.getContext('2d');
-      cx.translate(c.width / 2, c.height / 2);
-      cx.rotate(Math.PI / 2);
-      cx.drawImage(raw, -raw.width / 2, -raw.height / 2);
-    } else {
-      c.width = raw.width; c.height = raw.height;
-      c.getContext('2d').drawImage(raw, 0, 0);
-    }
+    const now = new Date(), c = document.createElement('canvas');
+    c.width = vid.videoWidth; c.height = vid.videoHeight;
+    c.getContext('2d').drawImage(vid, 0, 0);
     const pos = geo.pos, addr = addrOf(pos && pos.coords);
     close();
     openEditor(c, { now, pos, addr, realtime: true, rotationDegrees: 0, photoMode }, j);
@@ -1425,16 +1397,8 @@ async function photoCapture(j, file, photoMode = 'portrait') {
   const pos = await new Promise(res => navigator.geolocation ? navigator.geolocation.getCurrentPosition(res, () => res(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }) : res(null));
   if (pos) await lookupAddr(pos.coords);
   const bmp = await createImageBitmap(file);
-  const wantedLandscape = photoMode === 'landscape';
-  const needsQuarterTurn = wantedLandscape ? bmp.height > bmp.width : bmp.width > bmp.height;
-  let oriented = bmp;
-  if (needsQuarterTurn) {
-    const c = document.createElement('canvas'); c.width = bmp.height; c.height = bmp.width;
-    const cx = c.getContext('2d'); cx.translate(c.width/2,c.height/2); cx.rotate(Math.PI/2);
-    cx.drawImage(bmp,-bmp.width/2,-bmp.height/2); oriented = c;
-  }
   const ts = file.lastModified || Date.now();
-  openEditor(oriented, { now: new Date(ts), pos, addr: addrOf(pos && pos.coords), realtime: Math.abs(Date.now() - ts) < 6e5, photoMode }, j);
+  openEditor(bmp, { now: new Date(ts), pos, addr: addrOf(pos && pos.coords), realtime: Math.abs(Date.now() - ts) < 6e5, photoMode }, j);
 }
 
 function settingsPage() {
