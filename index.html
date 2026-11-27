@@ -126,7 +126,7 @@ body.reordering{overflow:hidden;touch-action:none}
 #camShot{width:70px;height:70px;border-radius:50%;border:5px solid #fff;background:#e5e5e5;padding:0}
 #camShot:active{background:#bbb}
 .ed-top{padding:10px 14px;font-size:13px;background:#000}
-#ed canvas{flex:1;min-height:0;max-width:100%;object-fit:contain;touch-action:none;background:#111}
+#ed canvas{display:block;flex:1;min-height:0;min-width:0;width:100%;height:100%;max-width:100%;object-fit:contain;touch-action:none;background:#111}
 .ed-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 12px;background:#111}
 .ed-tools button{background:#2a2f33;color:#fff;border:1px solid #444;padding:8px 11px;border-radius:8px;font:600 13px system-ui}
 .ed-tools button.on{background:var(--blue);border-color:#fff}
@@ -885,8 +885,8 @@ function hitShape(s, x, y, lw, wantHandle, tolPx) {
   return false;
 }
 
-function drawStamp(ctx, W, H, info, label) {
-  const d = info.now, p = info.pos && info.pos.coords, land = W >= H * 1.15;
+function drawStamp(ctx, W, H, info, label, layoutLandscape = null) {
+  const d = info.now, p = info.pos && info.pos.coords, land = layoutLandscape === null ? W >= H * 1.15 : !!layoutLandscape;
   const u = Math.max(12, Math.round(Math.min(W, H) / 42)), pd = Math.round(u * .72);
   const F = (size, bold = false) => `${bold ? 'bold ' : ''}${Math.round(size)}px system-ui,Arial,sans-serif`;
   const wrap = (text, font, maxWidth, maxLines = 5) => {
@@ -920,9 +920,11 @@ function drawStamp(ctx, W, H, info, label) {
 
   if (land) {
     const margin = Math.max(10, Math.round(u * .8)), bx = margin, bw = W - margin * 2;
-    const innerW = bw - pd * 2, gap = Math.max(10, Math.round(u * .8));
-    const leftW = Math.max(u * 7, innerW * .23), rightW = Math.max(u * 7, innerW * .25);
-    const midW = Math.max(u * 8, innerW - leftW - rightW - gap * 2);
+    const innerW = Math.max(1, bw - pd * 2);
+    const gap = Math.min(Math.max(6, Math.round(u * .65)), innerW * .035);
+    const usableW = Math.max(1, innerW - gap * 2);
+    // Proporções sempre fecham dentro da caixa, inclusive em telas/arquivos estreitos.
+    const leftW = usableW * .25, midW = usableW * .48, rightW = usableW - leftW - midW;
     const x1 = bx + pd, x2 = x1 + leftW + gap, x3 = x2 + midW + gap;
     const small = Math.max(11, u * .88), lineH = small * 1.22;
     const addrLines = wrap(addr, F(small), midW, 3);
@@ -987,7 +989,7 @@ function openEditor(src, info, j) {
     ctx.drawImage(base, 0, 0);
     shapes.forEach((s, i) => drawShape(ctx, s, lw, i === selected));
     if (cur) drawShape(ctx, cur, lw, false);
-    drawStamp(ctx, W, H, info, label);
+    drawStamp(ctx, W, H, info, label, info.layoutLandscape ?? null);
   };
   render();
   const canvasMetrics = () => {
@@ -1179,7 +1181,10 @@ async function startLive(j) {
     sctx.clearRect(0, 0, W, H);
     const p = geo.pos && geo.pos.coords;
     const addr = p ? (addrOf(p) || (navigator.onLine ? 'Buscando endereço…' : 'Endereço indisponível (sem internet)')) : 'Aguardando GPS…';
-    const landscapeScreen = window.innerWidth > window.innerHeight;
+    const vv = window.visualViewport;
+    const viewW = vv && vv.width ? vv.width : window.innerWidth;
+    const viewH = vv && vv.height ? vv.height : window.innerHeight;
+    const landscapeScreen = viewW > viewH;
     drawStamp(sctx, W, H, { now: new Date(), pos: geo.pos, addr }, label, landscapeScreen);
   };
   const repaintAfterRotation = () => {
@@ -1192,8 +1197,9 @@ async function startLive(j) {
   const iv = setInterval(paintStamp, 1000);
   vid.addEventListener('resize', repaintAfterRotation);
   vid.addEventListener('loadedmetadata', repaintAfterRotation);
-  window.addEventListener('orientationchange', repaintAfterRotation);
-  window.addEventListener('resize', repaintAfterRotation);
+  window.addEventListener('orientationchange', repaintAfterRotation, { passive: true });
+  window.addEventListener('resize', repaintAfterRotation, { passive: true });
+  if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', repaintAfterRotation);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', repaintAfterRotation);
   let ro = null;
   if (window.ResizeObserver) { ro = new ResizeObserver(repaintAfterRotation); ro.observe(vid); ro.observe(box); }
@@ -1201,6 +1207,7 @@ async function startLive(j) {
   const close = () => {
     closed = true; clearInterval(iv);
     window.removeEventListener('orientationchange', repaintAfterRotation); window.removeEventListener('resize', repaintAfterRotation);
+    if (screen.orientation && screen.orientation.removeEventListener) screen.orientation.removeEventListener('change', repaintAfterRotation);
     if (window.visualViewport) window.visualViewport.removeEventListener('resize', repaintAfterRotation);
     if (ro) ro.disconnect();
     stream.getTracks().forEach(t => t.stop()); stopGeo(); box.remove();
@@ -1245,8 +1252,12 @@ async function startLive(j) {
     c.width = vid.videoWidth; c.height = vid.videoHeight;
     c.getContext('2d').drawImage(vid, 0, 0);
     const pos = geo.pos, addr = addrOf(pos && pos.coords);
+    const vv = window.visualViewport;
+    const viewW = vv && vv.width ? vv.width : window.innerWidth;
+    const viewH = vv && vv.height ? vv.height : window.innerHeight;
+    const layoutLandscape = viewW > viewH;
     close();
-    openEditor(c, { now, pos, addr, realtime: true }, j);
+    openEditor(c, { now, pos, addr, realtime: true, layoutLandscape }, j);
   };
 }
 
