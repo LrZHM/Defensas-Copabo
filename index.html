@@ -1005,23 +1005,82 @@ function openEditor(src, info, j) {
   const lw = Math.max(10, Math.round(Math.min(W, H) / 48));
   const box = document.createElement('div');
   box.id = 'ed';
-  box.innerHTML = `<div class="ed-top"><b>Marcar problemas</b> · toque numa marca para mover/editar · seta com borda grossa</div>
+  box.innerHTML = `<div class="ed-top"><b>Editar foto</b> · arraste a caixa para mover · alças para ampliar e girar · selecione a seta para redimensionar</div>
     <canvas id="edC"></canvas>
     <div class="ed-tools">
       <button data-tool="arrow" class="on">➜ Seta</button><button data-tool="circle">◯ Círculo</button><button data-tool="pen">✎ Livre</button>
       ${['#ff2a2a', '#ffd400', '#22c55e', '#ffffff'].map((c, i) => `<button class="col ${i ? '' : 'on'}" data-col="${c}" style="background:${c}" aria-label="Cor"></button>`).join('')}
-      <button id="edRotate" title="Girar a seta selecionada">↻ Girar seta</button><button id="edUndo">Desfazer</button><button id="edClear">Limpar</button>
+      <button id="edRotate" title="Girar a seta selecionada">↻ Girar seta</button>
+      <button id="edArrowSmaller" title="Diminuir seta selecionada">－ Seta</button>
+      <button id="edArrowBigger" title="Aumentar seta selecionada">＋ Seta</button>
+      <button id="edUndo">Desfazer</button><button id="edClear">Limpar</button>
     </div>
     <div class="ed-bar"><button class="btn secondary" id="edCancel">Descartar</button><button class="btn" id="edOk">Salvar foto</button></div>`;
   document.body.appendChild(box);
   const cv = box.querySelector('#edC'), ctx = cv.getContext('2d');
   cv.width = W; cv.height = H;
   let selected = -1, mode = null, lastX = 0, lastY = 0;
-  const render = () => {
-    ctx.drawImage(base, 0, 0);
-    shapes.forEach((s, i) => drawShape(ctx, s, lw, i === selected));
+  // A caixa de informações é uma camada independente: pode ser movida,
+  // ampliada/reduzida e girada sem deformar a fotografia.
+  const stampCanvas = document.createElement('canvas');
+  stampCanvas.width = W; stampCanvas.height = H;
+  const stampCtx = stampCanvas.getContext('2d');
+  drawStamp(stampCtx, W, H, info, label);
+  const stampPixels = stampCtx.getImageData(0, 0, W, H).data;
+  let minSX = W, minSY = H, maxSX = 0, maxSY = 0;
+  for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) {
+    if (stampPixels[(yy * W + xx) * 4 + 3] > 8) {
+      if (xx < minSX) minSX = xx; if (xx > maxSX) maxSX = xx;
+      if (yy < minSY) minSY = yy; if (yy > maxSY) maxSY = yy;
+    }
+  }
+  const stampBox = { x: minSX, y: minSY, w: Math.max(1, maxSX - minSX + 1), h: Math.max(1, maxSY - minSY + 1) };
+  const stamp = {
+    x: stampBox.x + stampBox.w / 2,
+    y: stampBox.y + stampBox.h / 2,
+    scale: 1, rotation: 0
+  };
+  let stampSelected = true;
+  const stampCorners = () => {
+    const hw = stampBox.w * stamp.scale / 2, hh = stampBox.h * stamp.scale / 2;
+    const c = Math.cos(stamp.rotation), sn = Math.sin(stamp.rotation);
+    return [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]].map(([x,y]) => [stamp.x + x*c-y*sn, stamp.y + x*sn+y*c]);
+  };
+  const stampLocal = (x,y) => {
+    const dx=x-stamp.x, dy=y-stamp.y, c=Math.cos(stamp.rotation), sn=Math.sin(stamp.rotation);
+    return [dx*c+dy*sn, -dx*sn+dy*c];
+  };
+  const stampHit = (x,y) => {
+    const [lx,ly] = stampLocal(x,y), hw=stampBox.w*stamp.scale/2, hh=stampBox.h*stamp.scale/2;
+    const handle = Math.max(26, 34 / Math.max(.35, canvasMetrics().scale));
+    if (Math.hypot(lx-hw,ly-hh) < handle) return 'stampScale';
+    return Math.abs(lx)<=hw && Math.abs(ly)<=hh ? 'stampMove' : null;
+  };
+  const drawStampLayer = (showHandles) => {
+    const c = Math.cos(stamp.rotation), sn = Math.sin(stamp.rotation);
+    ctx.save();
+    ctx.translate(stamp.x, stamp.y); ctx.rotate(stamp.rotation); ctx.scale(stamp.scale, stamp.scale);
+    ctx.drawImage(stampCanvas, stampBox.x, stampBox.y, stampBox.w, stampBox.h,
+      -stampBox.w/2, -stampBox.h/2, stampBox.w, stampBox.h);
+    ctx.restore();
+    if (showHandles) {
+      const pts = stampCorners();
+      ctx.save(); ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = Math.max(3, lw*.28);
+      ctx.setLineDash([9,6]); ctx.beginPath(); pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.closePath(); ctx.stroke();
+      ctx.setLineDash([]); pts.forEach(q=>{ctx.beginPath();ctx.fillStyle='#00e5ff';ctx.arc(q[0],q[1],Math.max(11,lw*.8),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.stroke();});
+      const top = pts[1], rot = pts[0], mid=[(top[0]+rot[0])/2,(top[1]+rot[1])/2];
+      const nx=mid[0] + Math.sin(stamp.rotation)*Math.max(42,lw*3),
+            ny=mid[1] - Math.cos(stamp.rotation)*Math.max(42,lw*3);
+      ctx.beginPath();ctx.strokeStyle='#ff9f1a';ctx.lineWidth=Math.max(3,lw*.25);ctx.moveTo(mid[0],mid[1]);ctx.lineTo(nx,ny);ctx.stroke();
+      ctx.beginPath();ctx.fillStyle='#ff9f1a';ctx.arc(nx,ny,Math.max(14,lw*1.1),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.stroke();
+      stamp.rotateHandle=[nx,ny]; ctx.restore();
+    }
+  };
+  const render = (finalImage = false) => {
+    ctx.clearRect(0,0,W,H); ctx.drawImage(base, 0, 0);
+    shapes.forEach((sh, i) => drawShape(ctx, sh, lw, i === selected));
     if (cur) drawShape(ctx, cur, lw, false);
-    drawStamp(ctx, W, H, info, label);
+    drawStampLayer(!finalImage && stampSelected);
   };
   render();
   const canvasMetrics = () => {
@@ -1041,6 +1100,19 @@ function openEditor(src, info, j) {
     lastX = x; lastY = y; startX = x; startY = y;
     let hit = -1, handle = null;
     hadSel = selected >= 0;
+    const sh = stampHit(x,y);
+    const rh = stamp.rotateHandle;
+    if (stampSelected && rh && Math.hypot(x-rh[0],y-rh[1]) < Math.max(34,tp)) {
+      mode='stampRotate'; lastRotAngle=Math.atan2(y-stamp.y,x-stamp.x); render(); return;
+    }
+    if (sh) {
+      stampSelected=true;
+      mode=sh; lastX=x; lastY=y;
+      if (mode==='stampScale') stampStartDist=Math.max(1,Math.hypot(x-stamp.x,y-stamp.y));
+      if (mode==='stampRotate') lastRotAngle=Math.atan2(y-stamp.y,x-stamp.x);
+      selected=-1; render(); return;
+    }
+    stampSelected = false;
     if (selected >= 0 && shapes[selected]) {
       const h0 = hitShape(shapes[selected], x, y, lw, true, tp);
       if (h0) { hit = selected; handle = h0; }
@@ -1078,6 +1150,21 @@ function openEditor(src, info, j) {
       if (cur.k === 'pen') cur.pts.push([x, y]); else { cur.x2 = x; cur.y2 = y; }
       render();
       return;
+    }
+    if (mode === 'stampMove') {
+      stamp.x += x-lastX; stamp.y += y-lastY;
+      lastX=x; lastY=y; render(); return;
+    }
+    if (mode === 'stampScale') {
+      const dist=Math.max(1,Math.hypot(x-stamp.x,y-stamp.y));
+      stamp.scale=Math.max(.35,Math.min(3.5,stamp.scale*(dist/stampStartDist)));
+      stampStartDist=dist; lastX=x; lastY=y; render(); return;
+    }
+    if (mode === 'stampRotate') {
+      const angle=Math.atan2(y-stamp.y,x-stamp.x);
+      let delta=angle-lastRotAngle;
+      while(delta>Math.PI)delta-=Math.PI*2; while(delta< -Math.PI)delta+=Math.PI*2;
+      stamp.rotation+=delta; lastRotAngle=angle; render(); return;
     }
     if (selected >= 0 && shapes[selected]) {
       const s = shapes[selected];
@@ -1137,6 +1224,18 @@ function openEditor(src, info, j) {
     box.querySelectorAll('[data-col]').forEach(x => x.classList.toggle('on', x === b));
     if (selected >= 0 && shapes[selected]) { shapes[selected].c = color; render(); }
   });
+  const scaleSelectedArrow = factor => {
+    if (selected < 0 || !shapes[selected] || shapes[selected].k !== 'arrow') {
+      alert('Selecione uma seta para alterar o tamanho.');
+      return;
+    }
+    const a=shapes[selected], mx=(a.x1+a.x2)/2, my=(a.y1+a.y2)/2;
+    a.x1=mx+(a.x1-mx)*factor; a.y1=my+(a.y1-my)*factor;
+    a.x2=mx+(a.x2-mx)*factor; a.y2=my+(a.y2-my)*factor;
+    render();
+  };
+  box.querySelector('#edArrowSmaller').onclick = () => scaleSelectedArrow(.82);
+  box.querySelector('#edArrowBigger').onclick = () => scaleSelectedArrow(1.22);
   box.querySelector('#edRotate').onclick = () => {
     if (selected < 0 || !shapes[selected] || shapes[selected].k !== 'arrow') {
       alert('Selecione uma seta para girá-la.');
@@ -1158,7 +1257,7 @@ function openEditor(src, info, j) {
     const previousSelection = selected;
     selected = -1;
     cur = null;
-    render(); // Não incorpora alças/borda de seleção na foto final.
+    render(true); // Não incorpora alças/borda de seleção na foto final.
     v.photos[j] = cv.toDataURL('image/jpeg', .92);
     selected = previousSelection;
     v.photoMeta[j] = {
