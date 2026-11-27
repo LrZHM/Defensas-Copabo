@@ -67,6 +67,32 @@ input[type=date]::-webkit-datetime-edit{padding:0}
 .sw.on{border-color:var(--navy);box-shadow:0 0 0 2px #fff,0 0 0 4px var(--navy)}
 .sw.c0{background:#fff}.sw.cy{background:#fff3a8}.sw.cr{background:#ffc9c9}.sw.cg{background:#c8f0d0}
 .component textarea{min-height:52px;margin-top:6px;font-size:13px}
+
+@media (min-width:761px) and (max-width:1180px){
+  #app{max-width:1120px;padding:22px}
+  .head{padding:18px 22px}
+  .card{padding:18px;margin:14px 0}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .component .comp-head{grid-template-columns:minmax(0,1fr) 100px 130px 150px;gap:10px}
+  .sec-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .btn{min-height:46px;padding:12px 16px}
+  input,select,textarea{min-height:46px;font-size:16px}
+}
+@media (min-width:900px) and (max-width:1180px){
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (min-width:761px) and (max-width:1024px) and (orientation:portrait){
+  #app{max-width:900px;padding:18px}
+  .component .comp-head{grid-template-columns:minmax(0,1fr) 92px 118px}
+  .component .comp-head>span{grid-column:1/-1}
+}
+@media (min-width:761px) and (max-width:1180px){
+  #cam .cam-bar,#ed .ed-bar{padding:14px 22px}
+  .ed-tools{justify-content:center;gap:10px;padding:12px 18px}
+  .ed-tools button{min-height:44px;padding:10px 14px}
+  #ed canvas{max-height:calc(100dvh - 190px)}
+}
+
 @media(max-width:760px){
   html{min-height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   body{min-height:100vh;min-height:100dvh}
@@ -132,6 +158,13 @@ body.reordering{overflow:hidden;touch-action:none}
 .ed-tools button.on{background:var(--blue);border-color:#fff}
 .ed-tools .col{width:30px;height:30px;border-radius:50%;padding:0;border:3px solid #444}
 .ed-tools .col.on{border-color:#fff}
+
+@media (min-width:761px) and (max-width:1180px){
+  #ed .ed-top{font-size:15px;padding:14px 20px}
+  #ed .ed-tools{flex-wrap:wrap}
+  #ed .ed-tools button{font-size:14px}
+}
+
 @media print{
   body{background:white;color:#111}
   #app{max-width:none;padding:0}
@@ -1110,6 +1143,7 @@ function openEditor(src, info, j) {
   let activeId = null, startX = 0, startY = 0, lastRotAngle = 0, hadSel = false;
   const activePointers = new Map();
   let pinchStartDistance = 0, pinchStartScale = 1, pinchActive = false;
+  let pinchTarget = null, pinchShapeStart = null;
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const clampStamp = () => {
     const pts = stampCorners(), minX=Math.min(...pts.map(p=>p[0])), maxX=Math.max(...pts.map(p=>p[0]));
@@ -1128,11 +1162,22 @@ function openEditor(src, info, j) {
     e.preventDefault();
     activePointers.set(e.pointerId, e);
     try { cv.setPointerCapture(e.pointerId); } catch (_) {}
-    if (activePointers.size === 2 && stampSelected) {
+    if (activePointers.size === 2) {
       const pair=[...activePointers.values()];
       const a=pt(pair[0]), b=pt(pair[1]);
       pinchStartDistance=Math.max(1,Math.hypot(a[0]-b[0],a[1]-b[1]));
-      pinchStartScale=stamp.scale; pinchActive=true; mode='stampPinch'; activeId=e.pointerId;
+      if (stampSelected) {
+        pinchTarget='stamp';
+        pinchStartScale=stamp.scale;
+        pinchShapeStart=null;
+      } else if (selected >= 0 && shapes[selected] && shapes[selected].k !== 'pen') {
+        pinchTarget='shape';
+        pinchShapeStart={...shapes[selected]};
+      } else {
+        activePointers.delete(e.pointerId);
+        return;
+      }
+      pinchActive=true; mode='pinch'; activeId=e.pointerId;
       return;
     }
     if (activeId !== null) return;
@@ -1185,8 +1230,23 @@ function openEditor(src, info, j) {
       e.preventDefault();
       const pair=[...activePointers.values()], a=pt(pair[0]), b=pt(pair[1]);
       const dist=Math.max(1,Math.hypot(a[0]-b[0],a[1]-b[1]));
-      stamp.scale=clamp(pinchStartScale*dist/pinchStartDistance,.22,3.5);
-      clampStamp(); render(); return;
+      const ratio=dist/pinchStartDistance;
+      if (pinchTarget === 'stamp') {
+        stamp.scale=clamp(pinchStartScale*ratio,.22,3.5);
+        clampStamp();
+      } else if (pinchTarget === 'shape' && selected >= 0 && shapes[selected] && pinchShapeStart) {
+        const original=pinchShapeStart, s=shapes[selected];
+        // Escala radial em torno do centro da marca: mantém a posição e amplia/reduz
+        // tanto o comprimento da seta quanto o raio do círculo.
+        const cx=original.k === 'circle' ? original.x1 : (original.x1+original.x2)/2;
+        const cy=original.k === 'circle' ? original.y1 : (original.y1+original.y2)/2;
+        s.x1=cx+(original.x1-cx)*ratio;
+        s.y1=cy+(original.y1-cy)*ratio;
+        s.x2=cx+(original.x2-cx)*ratio;
+        s.y2=cy+(original.y2-cy)*ratio;
+        clampShape(s);
+      }
+      render(); return;
     }
     if (e.pointerId !== activeId || !mode) return;
     e.preventDefault();
@@ -1245,10 +1305,12 @@ function openEditor(src, info, j) {
     if (e) activePointers.delete(e.pointerId);
     if (pinchActive) {
       if (activePointers.size < 2) {
-        pinchActive=false; activeId=null; mode=null;
+        pinchActive=false; pinchTarget=null; pinchShapeStart=null; activeId=null; mode=null;
         if (activePointers.size === 1) {
           const remaining=[...activePointers.values()][0], q=pt(remaining);
-          activeId=remaining.pointerId; mode='stampMove'; lastX=q[0]; lastY=q[1];
+          activeId=remaining.pointerId;
+          mode=stampSelected ? 'stampMove' : 'move';
+          lastX=q[0]; lastY=q[1];
         }
         render(); return;
       }
@@ -1343,9 +1405,24 @@ async function startLive(j, photoMode = 'portrait') {
   vid.srcObject = stream;
   try { await vid.play(); } catch (_) {}
 
+  const deviceIsLandscape = () => {
+    // iOS pode manter videoWidth/videoHeight fixos mesmo após girar o aparelho.
+    // A orientação do viewport muda com a rotação real e funciona também no Safari.
+    const w = window.visualViewport && window.visualViewport.width ? window.visualViewport.width : window.innerWidth;
+    const h = window.visualViewport && window.visualViewport.height ? window.visualViewport.height : window.innerHeight;
+    if (w && h && Math.abs(w - h) > 40) return w > h;
+    try {
+      if (screen.orientation && typeof screen.orientation.type === 'string' &&
+          screen.orientation.type !== 'unknown') return screen.orientation.type.startsWith('landscape');
+      if (typeof window.orientation === 'number' && Math.abs(window.orientation) === 90) return true;
+      if (typeof window.orientation === 'number' && Math.abs(window.orientation) === 0) return false;
+    } catch (_) {}
+    return false;
+  };
   const orientationMatches = () => {
-    if (!vid.videoWidth || !vid.videoHeight) return false;
-    return (vid.videoWidth > vid.videoHeight) === wantedLandscape;
+    // Não comparar com as dimensões intrínsecas do stream: no iPhone elas
+    // podem permanecer em retrato mesmo com o aparelho fisicamente deitado.
+    return deviceIsLandscape() === wantedLandscape;
   };
   const shotBtn = box.querySelector('#camShot');
   const validateOrientation = () => {
@@ -1355,7 +1432,7 @@ async function startLive(j, photoMode = 'portrait') {
     const hint = box.querySelector('.cam-orientation-hint');
     if (hint) hint.textContent = ok
       ? (wantedLandscape ? 'Posição horizontal correta' : 'Posição vertical correta')
-      : (wantedLandscape ? 'Gire para a horizontal para fotografar' : 'Gire para a vertical para fotografar');
+      : (wantedLandscape ? 'Gire o aparelho para a horizontal para fotografar' : 'Gire o aparelho para a vertical para fotografar');
     return ok;
   };
   validateOrientation();
