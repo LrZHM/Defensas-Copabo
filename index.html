@@ -120,7 +120,7 @@ body.reordering{overflow:hidden;touch-action:none}
 @media (orientation:landscape){.cam-info{left:12px;right:12px;bottom:92px;max-width:none;display:flex;gap:18px;align-items:flex-end}.cam-info .c2{flex:1;margin-top:0}.cam-info .c3{margin-top:0}.cam-info .t{font-size:24px}}
 #cam,#ed{position:fixed;inset:0;background:#000;z-index:1000;display:flex;flex-direction:column;color:#fff;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
 #cam video{flex:1;min-height:0;width:100%;object-fit:contain;background:#000}
-.cam-info{position:absolute;left:10px;bottom:112px;max-width:82%;background:rgba(0,0,0,.45);padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.35;pointer-events:none}
+.cam-info{position:absolute;left:10px;bottom:112px;max-width:82%;background:transparent;padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.35;pointer-events:none}
 .cam-info .t{display:block;font-size:30px;font-weight:800;line-height:1.1}
 .cam-bar,.ed-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:#000}
 #camShot{width:70px;height:70px;border-radius:50%;border:5px solid #fff;background:#e5e5e5;padding:0}
@@ -854,6 +854,11 @@ function hitShape(s, x, y, lw, wantHandle, tolPx) {
   const tol = Math.max(36, lw * 3.2, tolPx || 0);
   if (s.k === 'circle') {
     const r = Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+    if (wantHandle) {
+      const endpointHit = Math.max(40, tolPx || 0, 48);
+      if (Math.hypot(x-s.x2,y-s.y2) < endpointHit) return 'h2';
+      if (Math.hypot(x-s.x1,y-s.y1) < endpointHit) return 'h1';
+    }
     const d = Math.hypot(x - s.x1, y - s.y1);
     return Math.abs(d - r) < tol ? true : false;
   }
@@ -1020,7 +1025,6 @@ function openEditor(src, info, j) {
     <div class="ed-tools">
       <button data-tool="arrow" class="on">➜ Seta</button><button data-tool="circle">◯ Círculo</button><button data-tool="pen">✎ Livre</button>
       ${['#ff2a2a', '#ffd400', '#22c55e', '#ffffff'].map((c, i) => `<button class="col ${i ? '' : 'on'}" data-col="${c}" style="background:${c}" aria-label="Cor"></button>`).join('')}
-      <button id="edRotate" title="Girar a seta selecionada">↻ Girar seta</button>
       <button id="edUndo">Desfazer</button><button id="edClear">Limpar</button>
     </div>
     <div class="ed-bar"><button class="btn secondary" id="edCancel">Descartar</button><button class="btn" id="edOk">Salvar foto</button></div>`;
@@ -1104,11 +1108,35 @@ function openEditor(src, info, j) {
   const kpx = () => 1 / canvasMetrics().scale;
   const tolFor = e => (e.pointerType === 'mouse' ? 14 : 30) * kpx(); // área de toque generosa (em px de tela)
   let activeId = null, startX = 0, startY = 0, lastRotAngle = 0, hadSel = false;
+  const activePointers = new Map();
+  let pinchStartDistance = 0, pinchStartScale = 1, pinchActive = false;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const clampStamp = () => {
+    const pts = stampCorners(), minX=Math.min(...pts.map(p=>p[0])), maxX=Math.max(...pts.map(p=>p[0]));
+    const minY=Math.min(...pts.map(p=>p[1])), maxY=Math.max(...pts.map(p=>p[1]));
+    if (minX < 0) stamp.x -= minX;
+    if (maxX > W) stamp.x -= maxX-W;
+    if (minY < 0) stamp.y -= minY;
+    if (maxY > H) stamp.y -= maxY-H;
+  };
+  const clampShape = sh => {
+    const clampPoint = (x,y) => [clamp(x,0,W),clamp(y,0,H)];
+    if (sh.k==='pen') sh.pts=sh.pts.map(q=>clampPoint(q[0],q[1]));
+    else { [sh.x1,sh.y1]=clampPoint(sh.x1,sh.y1); [sh.x2,sh.y2]=clampPoint(sh.x2,sh.y2); }
+  };
   cv.addEventListener('pointerdown', e => {
     e.preventDefault();
-    if (activeId !== null) return;                 // ignora 2º dedo: não cria outra seta
-    activeId = e.pointerId;
+    activePointers.set(e.pointerId, e);
     try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+    if (activePointers.size === 2 && stampSelected) {
+      const pair=[...activePointers.values()];
+      const a=pt(pair[0]), b=pt(pair[1]);
+      pinchStartDistance=Math.max(1,Math.hypot(a[0]-b[0],a[1]-b[1]));
+      pinchStartScale=stamp.scale; pinchActive=true; mode='stampPinch'; activeId=e.pointerId;
+      return;
+    }
+    if (activeId !== null) return;
+    activeId = e.pointerId;
     const [x, y] = pt(e), tp = tolFor(e);
     lastX = x; lastY = y; startX = x; startY = y;
     let hit = -1, handle = null;
@@ -1152,6 +1180,14 @@ function openEditor(src, info, j) {
     render();
   });
   cv.addEventListener('pointermove', e => {
+    if (activePointers.has(e.pointerId)) activePointers.set(e.pointerId,e);
+    if (pinchActive && activePointers.size >= 2) {
+      e.preventDefault();
+      const pair=[...activePointers.values()], a=pt(pair[0]), b=pt(pair[1]);
+      const dist=Math.max(1,Math.hypot(a[0]-b[0],a[1]-b[1]));
+      stamp.scale=clamp(pinchStartScale*dist/pinchStartDistance,.22,3.5);
+      clampStamp(); render(); return;
+    }
     if (e.pointerId !== activeId || !mode) return;
     e.preventDefault();
     const [x, y] = pt(e);
@@ -1166,18 +1202,18 @@ function openEditor(src, info, j) {
     }
     if (mode === 'stampMove') {
       stamp.x += x-lastX; stamp.y += y-lastY;
-      lastX=x; lastY=y; render(); return;
+      lastX=x; lastY=y; clampStamp(); render(); return;
     }
     if (mode === 'stampScale') {
       const dist=Math.max(1,Math.hypot(x-stamp.x,y-stamp.y));
-      stamp.scale=Math.max(.35,Math.min(3.5,stamp.scale*(dist/stampStartDist)));
-      stampStartDist=dist; lastX=x; lastY=y; render(); return;
+      stamp.scale=clamp(stamp.scale*(dist/stampStartDist),.22,3.5);
+      stampStartDist=dist; lastX=x; lastY=y; clampStamp(); render(); return;
     }
     if (mode === 'stampRotate') {
       const angle=Math.atan2(y-stamp.y,x-stamp.x);
       let delta=angle-lastRotAngle;
       while(delta>Math.PI)delta-=Math.PI*2; while(delta< -Math.PI)delta+=Math.PI*2;
-      stamp.rotation+=delta; lastRotAngle=angle; render(); return;
+      stamp.rotation+=delta; lastRotAngle=angle; clampStamp(); render(); return;
     }
     if (selected >= 0 && shapes[selected]) {
       const s = shapes[selected];
@@ -1200,11 +1236,23 @@ function openEditor(src, info, j) {
         s.x2 = mx + dx; s.y2 = my + dy;
         lastRotAngle = nowAngle;
       }
+      clampShape(s);
       lastX = x; lastY = y;
       render();
     }
   });
   const end = e => {
+    if (e) activePointers.delete(e.pointerId);
+    if (pinchActive) {
+      if (activePointers.size < 2) {
+        pinchActive=false; activeId=null; mode=null;
+        if (activePointers.size === 1) {
+          const remaining=[...activePointers.values()][0], q=pt(remaining);
+          activeId=remaining.pointerId; mode='stampMove'; lastX=q[0]; lastY=q[1];
+        }
+        render(); return;
+      }
+    }
     if (e && e.pointerId !== activeId) return;
     activeId = null;
     if (mode === 'draw' && cur) {
@@ -1237,19 +1285,6 @@ function openEditor(src, info, j) {
     box.querySelectorAll('[data-col]').forEach(x => x.classList.toggle('on', x === b));
     if (selected >= 0 && shapes[selected]) { shapes[selected].c = color; render(); }
   });
-  box.querySelector('#edRotate').onclick = () => {
-    if (selected < 0 || !shapes[selected] || shapes[selected].k !== 'arrow') {
-      alert('Selecione uma seta para girá-la.');
-      return;
-    }
-    const a = shapes[selected];
-    const mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
-    const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
-    // Rotaciona 90 graus ao redor do centro, mantendo o comprimento.
-    a.x1 = mx + dy / 2; a.y1 = my - dx / 2;
-    a.x2 = mx - dy / 2; a.y2 = my + dx / 2;
-    render();
-  };
   box.querySelector('#edUndo').onclick = () => { if (selected >= 0) { shapes.splice(selected, 1); selected = -1; } else shapes.pop(); render(); };
   box.querySelector('#edClear').onclick = () => { shapes.length = 0; selected = -1; render(); };
   box.querySelector('#edCancel').onclick = () => { if (!shapes.length || confirm('Descartar esta foto?')) box.remove(); };
@@ -1293,11 +1328,11 @@ async function startLive(j, photoMode = 'portrait') {
   const box = document.createElement('div');
   box.id = 'cam';
   box.innerHTML = `<video playsinline muted autoplay></video><canvas id="camStamp" style="position:absolute;pointer-events:none"></canvas>
-    ${wantedLandscape ? '<div class="cam-orientation-hint">Mantenha o iPhone na horizontal</div>' : ''}
+    <div class="cam-orientation-hint">${wantedLandscape ? 'Mantenha o aparelho na horizontal' : 'Mantenha o aparelho na vertical'}</div>
     <div class="cam-bar"><button class="btn secondary" id="camX" style="min-width:96px">Cancelar</button><button id="camShot" aria-label="Capturar"></button><button class="btn secondary" id="camFlip" aria-label="Alternar câmera frontal/traseira" style="min-width:96px">⟲ Câmera</button></div>`;
   document.body.appendChild(box);
-  if (wantedLandscape && screen.orientation && screen.orientation.lock) {
-    try { await screen.orientation.lock('landscape'); } catch (_) {}
+  if (screen.orientation && screen.orientation.lock) {
+    try { await screen.orientation.lock(wantedLandscape ? 'landscape' : 'portrait'); } catch (_) {}
   }
   const vid = box.querySelector('video'), stampCv = box.querySelector('#camStamp'), sctx = stampCv.getContext('2d');
   const flipBtn = box.querySelector('#camFlip');
@@ -1307,6 +1342,23 @@ async function startLive(j, photoMode = 'portrait') {
   readFacing(stream);
   vid.srcObject = stream;
   try { await vid.play(); } catch (_) {}
+
+  const orientationMatches = () => {
+    if (!vid.videoWidth || !vid.videoHeight) return false;
+    return (vid.videoWidth > vid.videoHeight) === wantedLandscape;
+  };
+  const shotBtn = box.querySelector('#camShot');
+  const validateOrientation = () => {
+    const ok = orientationMatches();
+    shotBtn.disabled = !ok || switching;
+    shotBtn.style.opacity = ok ? '1' : '.35';
+    const hint = box.querySelector('.cam-orientation-hint');
+    if (hint) hint.textContent = ok
+      ? (wantedLandscape ? 'Posição horizontal correta' : 'Posição vertical correta')
+      : (wantedLandscape ? 'Gire para a horizontal para fotografar' : 'Gire para a vertical para fotografar');
+    return ok;
+  };
+  validateOrientation();
 
   // Carimbo ao vivo: mesmo desenho da foto final (paisagem = faixa em 3 colunas; retrato = quadro compacto),
   // posicionado exatamente sobre a área visível do vídeo e refeito a cada giro/redimensionamento.
@@ -1330,6 +1382,7 @@ async function startLive(j, photoMode = 'portrait') {
     drawStamp(sctx, W, H, { now: new Date(), pos: geo.pos, addr }, label, frameLandscape);
   };
   const repaintAfterRotation = () => {
+    validateOrientation();
     paintStamp();
     requestAnimationFrame(() => requestAnimationFrame(paintStamp));
     setTimeout(paintStamp, 220);
@@ -1384,13 +1437,18 @@ async function startLive(j, photoMode = 'portrait') {
     stream = ns; vid.srcObject = ns;
     if (ok) { facing = next; readFacing(ns); } else alert('Este aparelho não permitiu trocar de câmera.');
     try { await vid.play(); } catch (_) {}
+    validateOrientation();
     paintStamp();
-    switching = false; flipBtn.disabled = false;
+    switching = false; flipBtn.disabled = false; validateOrientation();
   };
 
   box.querySelector('#camX').onclick = close;
-  box.querySelector('#camShot').onclick = () => {
+  shotBtn.onclick = () => {
     if (!vid.videoWidth || switching) return;
+    if (!validateOrientation()) {
+      alert(wantedLandscape ? 'Foto não permitida: coloque o aparelho na horizontal.' : 'Foto não permitida: coloque o aparelho na vertical.');
+      return;
+    }
     const now = new Date(), c = document.createElement('canvas');
     c.width = vid.videoWidth; c.height = vid.videoHeight;
     c.getContext('2d').drawImage(vid, 0, 0);
@@ -1405,6 +1463,14 @@ async function photoCapture(j, file, photoMode = 'portrait') {
   const pos = await new Promise(res => navigator.geolocation ? navigator.geolocation.getCurrentPosition(res, () => res(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }) : res(null));
   if (pos) await lookupAddr(pos.coords);
   const bmp = await createImageBitmap(file);
+  const wantedLandscape = photoMode === 'landscape';
+  if ((bmp.width > bmp.height) !== wantedLandscape) {
+    alert(wantedLandscape
+      ? 'Foto não permitida: selecione ou tire uma imagem horizontal.'
+      : 'Foto não permitida: selecione ou tire uma imagem vertical.');
+    if (bmp.close) bmp.close();
+    return;
+  }
   const ts = file.lastModified || Date.now();
   openEditor(bmp, { now: new Date(ts), pos, addr: addrOf(pos && pos.coords), realtime: Math.abs(Date.now() - ts) < 6e5, photoMode }, j);
 }
