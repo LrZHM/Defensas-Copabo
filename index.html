@@ -633,8 +633,8 @@ function paintDef() {
         <b>${label}</b>
         <input class="hidden" type="file" accept="image/*" capture="environment" id="photo${j}" data-photo="${j}">
         <div class="photo-mode-actions">
-          <button class="btn secondary" data-a="take" data-mode="landscape" data-j="${j}">▰ Foto horizontal</button>
-          <button class="btn secondary" data-a="take" data-mode="portrait" data-j="${j}">▯ Foto vertical</button>
+          <button class="btn secondary" data-a="take" data-mode="landscape" data-j="${j}">Foto horizontal</button>
+          <button class="btn secondary" data-a="take" data-mode="portrait" data-j="${j}">Foto vertical</button>
         </div>
         ${v.photos[j] ? `<button class="btn danger full" data-a="delphoto" data-j="${j}">Remover foto</button>` : ''}
         ${v.photoMeta[j] ? `<small class="muted">${esc(v.photoMeta[j].date)} · ${esc(v.photoMeta[j].location)}</small>` : ''}
@@ -872,13 +872,16 @@ function hitShape(s, x, y, lw, wantHandle, tolPx) {
   const x1 = s.x1, y1 = s.y1, x2 = s.x2, y2 = s.y2;
   const ht = Math.max(34, lw * 3.2, tolPx || 0);
   if (wantHandle) {
+    // Primeiro testa as duas pontas: em setas curtas a área de rotação
+    // não pode bloquear o redimensionamento de uma das extremidades.
+    const endpointHit = Math.max(ht, tolPx ? tolPx * 1.5 : 0, 48);
+    if (Math.hypot(x - x1, y - y1) < endpointHit) return 'h1';
+    if (Math.hypot(x - x2, y - y2) < endpointHit) return 'h2';
     if (s.k === 'arrow') {
       const rp = rotHandle(s, lw);
-      const rotateHit = Math.max(ht, tolPx ? tolPx * 1.65 : 0, 58);
+      const rotateHit = Math.max(42, tolPx ? tolPx * 1.35 : 0);
       if (Math.hypot(x - rp[0], y - rp[1]) < rotateHit) return 'rot';
     }
-    if (Math.hypot(x - x1, y - y1) < ht) return 'h1';
-    if (Math.hypot(x - x2, y - y2) < ht) return 'h2';
   }
   const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2 || 1;
   let tt = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / l2;
@@ -1023,6 +1026,7 @@ function openEditor(src, info, j) {
     <div class="ed-bar"><button class="btn secondary" id="edCancel">Descartar</button><button class="btn" id="edOk">Salvar foto</button></div>`;
   document.body.appendChild(box);
   const cv = box.querySelector('#edC'), ctx = cv.getContext('2d');
+  cv.style.touchAction = 'none';
   cv.width = W; cv.height = H;
   let selected = -1, mode = null, lastX = 0, lastY = 0;
   // A caixa de informações é uma camada independente: pode ser movida,
@@ -1057,8 +1061,11 @@ function openEditor(src, info, j) {
   };
   const stampHit = (x,y) => {
     const [lx,ly] = stampLocal(x,y), hw=stampBox.w*stamp.scale/2, hh=stampBox.h*stamp.scale/2;
-    const handle = Math.max(26, 34 / Math.max(.35, canvasMetrics().scale));
-    if (Math.hypot(lx-hw,ly-hh) < handle) return 'stampScale';
+    const handle = Math.max(34, 46 / Math.max(.25, canvasMetrics().scale));
+    // Qualquer um dos quatro cantos redimensiona a caixa pelo toque.
+    for (const [cx,cy] of [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]]) {
+      if (Math.hypot(lx-cx,ly-cy) < handle) return 'stampScale';
+    }
     return Math.abs(lx)<=hw && Math.abs(ly)<=hh ? 'stampMove' : null;
   };
   const drawStampLayer = (showHandles) => {
@@ -1073,11 +1080,12 @@ function openEditor(src, info, j) {
       ctx.save(); ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = Math.max(3, lw*.28);
       ctx.setLineDash([9,6]); ctx.beginPath(); pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.closePath(); ctx.stroke();
       ctx.setLineDash([]); pts.forEach(q=>{ctx.beginPath();ctx.fillStyle='#00e5ff';ctx.arc(q[0],q[1],Math.max(11,lw*.8),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.stroke();});
-      const top = pts[1], rot = pts[0], mid=[(top[0]+rot[0])/2,(top[1]+rot[1])/2];
-      const nx=mid[0] + Math.sin(stamp.rotation)*Math.max(42,lw*3),
-            ny=mid[1] - Math.cos(stamp.rotation)*Math.max(42,lw*3);
-      ctx.beginPath();ctx.strokeStyle='#ff9f1a';ctx.lineWidth=Math.max(3,lw*.25);ctx.moveTo(mid[0],mid[1]);ctx.lineTo(nx,ny);ctx.stroke();
-      ctx.beginPath();ctx.fillStyle='#ff9f1a';ctx.arc(nx,ny,Math.max(14,lw*1.1),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.stroke();
+      const topMid=[(pts[0][0]+pts[1][0])/2,(pts[0][1]+pts[1][1])/2];
+      const nx=topMid[0] + Math.sin(stamp.rotation)*Math.max(58,lw*4),
+            ny=topMid[1] - Math.cos(stamp.rotation)*Math.max(58,lw*4);
+      ctx.beginPath();ctx.strokeStyle='#ff9f1a';ctx.lineWidth=Math.max(3,lw*.25);ctx.moveTo(topMid[0],topMid[1]);ctx.lineTo(nx,ny);ctx.stroke();
+      ctx.beginPath();ctx.fillStyle='#ff9f1a';ctx.arc(nx,ny,Math.max(17,lw*1.25),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle='#111';ctx.font='bold '+Math.round(Math.max(20,lw*1.45))+'px system-ui,Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('↻',nx,ny+1);
       stamp.rotateHandle=[nx,ny]; ctx.restore();
     }
   };
@@ -1107,7 +1115,7 @@ function openEditor(src, info, j) {
     hadSel = selected >= 0;
     const sh = stampHit(x,y);
     const rh = stamp.rotateHandle;
-    if (stampSelected && rh && Math.hypot(x-rh[0],y-rh[1]) < Math.max(34,tp)) {
+    if (stampSelected && rh && Math.hypot(x-rh[0],y-rh[1]) < Math.max(42,tp*1.35)) {
       mode='stampRotate'; lastRotAngle=Math.atan2(y-stamp.y,x-stamp.x); render(); return;
     }
     if (sh) {
