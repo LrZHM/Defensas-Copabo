@@ -163,6 +163,10 @@ body.reordering{overflow:hidden;touch-action:none}
 .export-incomplete span{display:block;min-width:0;overflow-wrap:anywhere}
 .export-help{margin:0 0 18px!important;line-height:1.4}
 .material-model{margin:8px 0 14px!important;line-height:1.35;overflow-wrap:anywhere}
+
+.photo-mode-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.photo-mode-actions .btn{min-width:0;white-space:normal;line-height:1.2;padding:12px 8px}
+@media(max-width:420px){.photo-mode-actions{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -627,8 +631,10 @@ function paintDef() {
         ${v.photos[j] ? `<img src="${v.photos[j]}" alt="${label}">` : `<div style="height:150px;display:grid;place-items:center;color:#71818c">Sem fotografia</div>`}
         <b>${label}</b>
         <input class="hidden" type="file" accept="image/*" capture="environment" id="photo${j}" data-photo="${j}">
-        <button class="btn secondary full" data-a="take" data-j="${j}">${v.photos[j] ? 'Refazer foto' : 'Tirar foto'}</button>
-        <button class="btn secondary full" style="margin-top:6px;font-size:12px;padding:8px" data-a="takesys" data-j="${j}">Câmera do sistema (alta resolução)</button>
+        <div class="photo-mode-actions">
+          <button class="btn secondary" data-a="take" data-mode="landscape" data-j="${j}">▰ Foto horizontal</button>
+          <button class="btn secondary" data-a="take" data-mode="portrait" data-j="${j}">▯ Foto vertical</button>
+        </div>
         ${v.photos[j] ? `<button class="btn danger full" data-a="delphoto" data-j="${j}">Remover foto</button>` : ''}
         ${v.photoMeta[j] ? `<small class="muted">${esc(v.photoMeta[j].date)} · ${esc(v.photoMeta[j].location)}</small>` : ''}
       </div>`
@@ -1274,15 +1280,23 @@ function openEditor(src, info, j) {
   };
 }
 
-async function startLive(j) {
+async function startLive(j, photoMode = 'portrait') {
+  const wantedLandscape = photoMode === 'landscape';
   const fallback = () => {
     if (!window.isSecureContext && !startLive.warned) { startLive.warned = true; alert('Câmera ao vivo e GPS exigem página HTTPS. Vou abrir a câmera do sistema (sem GPS). Para o recurso completo, abra o app por um link https://.'); }
-    document.getElementById('photo' + j).click();
+    const input = document.getElementById('photo' + j);
+    input.dataset.photoMode = photoMode;
+    input.click();
   };
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fallback();
   let stream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1440 } }, audio: false });
+    stream = await navigator.mediaDevices.getUserMedia({ video: {
+      facingMode: { ideal: 'environment' },
+      width: { ideal: wantedLandscape ? 2560 : 1440 },
+      height: { ideal: wantedLandscape ? 1440 : 2560 },
+      aspectRatio: { ideal: wantedLandscape ? 16/9 : 9/16 }
+    }, audio: false });
   } catch (e) { return fallback(); }
   const box = document.createElement('div');
   box.id = 'cam';
@@ -1307,7 +1321,9 @@ async function startLive(j) {
     stampCv.style.left = (vid.offsetLeft + (cw - dw) / 2) + 'px';
     stampCv.style.top = (vid.offsetTop + (ch - dh) / 2) + 'px';
     stampCv.style.width = dw + 'px'; stampCv.style.height = dh + 'px';
-    const q = Math.min(1, 1280 / Math.max(vw, vh)), W = Math.round(vw * q), H = Math.round(vh * q);
+    const targetW = wantedLandscape ? Math.max(vw, vh) : Math.min(vw, vh);
+    const targetH = wantedLandscape ? Math.min(vw, vh) : Math.max(vw, vh);
+    const q = Math.min(1, 1280 / Math.max(targetW, targetH)), W = Math.round(targetW * q), H = Math.round(targetH * q);
     if (stampCv.width !== W || stampCv.height !== H) { stampCv.width = W; stampCv.height = H; }
     sctx.clearRect(0, 0, W, H);
     const p = geo.pos && geo.pos.coords;
@@ -1349,7 +1365,11 @@ async function startLive(j) {
     navigator.mediaDevices.enumerateDevices().then(l => { if (l.filter(d => d.kind === 'videoinput').length < 2) flipBtn.style.visibility = 'hidden'; }).catch(() => {});
   }
   const tryStream = async vc => { try { return await navigator.mediaDevices.getUserMedia({ video: vc, audio: false }); } catch (_) { return null; } };
-  const size = { width: { ideal: 2560 }, height: { ideal: 1440 } };
+  const size = {
+    width: { ideal: wantedLandscape ? 2560 : 1440 },
+    height: { ideal: wantedLandscape ? 1440 : 2560 },
+    aspectRatio: { ideal: wantedLandscape ? 16/9 : 9/16 }
+  };
   flipBtn.onclick = async () => {
     if (switching) return;
     switching = true; flipBtn.disabled = true;
@@ -1379,23 +1399,42 @@ async function startLive(j) {
   box.querySelector('#camX').onclick = close;
   box.querySelector('#camShot').onclick = () => {
     if (!vid.videoWidth || switching) return;
-    const now = new Date(), c = document.createElement('canvas');
-    c.width = vid.videoWidth; c.height = vid.videoHeight;
-    c.getContext('2d').drawImage(vid, 0, 0);
+    const now = new Date(), raw = document.createElement('canvas');
+    raw.width = vid.videoWidth; raw.height = vid.videoHeight;
+    raw.getContext('2d').drawImage(vid, 0, 0);
+    const needsQuarterTurn = wantedLandscape ? raw.height > raw.width : raw.width > raw.height;
+    const c = document.createElement('canvas');
+    if (needsQuarterTurn) {
+      c.width = raw.height; c.height = raw.width;
+      const cx = c.getContext('2d');
+      cx.translate(c.width / 2, c.height / 2);
+      cx.rotate(Math.PI / 2);
+      cx.drawImage(raw, -raw.width / 2, -raw.height / 2);
+    } else {
+      c.width = raw.width; c.height = raw.height;
+      c.getContext('2d').drawImage(raw, 0, 0);
+    }
     const pos = geo.pos, addr = addrOf(pos && pos.coords);
-    const rotationDegrees = physicalCameraRotation(c);
     close();
-    openEditor(c, { now, pos, addr, realtime: true, rotationDegrees }, j);
+    openEditor(c, { now, pos, addr, realtime: true, rotationDegrees: 0, photoMode }, j);
   };
 }
 
-async function photoCapture(j, file) {
+async function photoCapture(j, file, photoMode = 'portrait') {
   if (!file) return;
   const pos = await new Promise(res => navigator.geolocation ? navigator.geolocation.getCurrentPosition(res, () => res(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }) : res(null));
   if (pos) await lookupAddr(pos.coords);
   const bmp = await createImageBitmap(file);
+  const wantedLandscape = photoMode === 'landscape';
+  const needsQuarterTurn = wantedLandscape ? bmp.height > bmp.width : bmp.width > bmp.height;
+  let oriented = bmp;
+  if (needsQuarterTurn) {
+    const c = document.createElement('canvas'); c.width = bmp.height; c.height = bmp.width;
+    const cx = c.getContext('2d'); cx.translate(c.width/2,c.height/2); cx.rotate(Math.PI/2);
+    cx.drawImage(bmp,-bmp.width/2,-bmp.height/2); oriented = c;
+  }
   const ts = file.lastModified || Date.now();
-  openEditor(bmp, { now: new Date(ts), pos, addr: addrOf(pos && pos.coords), realtime: Math.abs(Date.now() - ts) < 6e5 }, j);
+  openEditor(oriented, { now: new Date(ts), pos, addr: addrOf(pos && pos.coords), realtime: Math.abs(Date.now() - ts) < 6e5, photoMode }, j);
 }
 
 function settingsPage() {
@@ -2027,8 +2066,7 @@ app.addEventListener('click', async e => {
     location.href = 'mailto:lorenzo.marchetti@copaboinfra.com.br,lorenzo.hayama@gmail.com?subject=' +
       encodeURIComponent('Sugestão - Relatório de Defensas Copabo');
   }
-  if (a === 'take') startLive(+b.dataset.j);
-  if (a === 'takesys') document.getElementById('photo' + b.dataset.j).click();
+  if (a === 'take') startLive(+b.dataset.j, b.dataset.mode || 'portrait');
   if (a === 'delphoto') {
     current.v.photos[+b.dataset.j] = null;
     current.v.photoMeta[+b.dataset.j] = null;
@@ -2130,7 +2168,8 @@ app.addEventListener('pointerdown', e => {
 app.addEventListener('change', async e => {
   const t = e.target;
   if (t.dataset.photo !== undefined) {
-    photoCapture(+t.dataset.photo, t.files[0]);
+    photoCapture(+t.dataset.photo, t.files[0], t.dataset.photoMode || 'portrait');
+    t.value = '';
     return;
   }
   if (t.dataset.asset) {
