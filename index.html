@@ -961,8 +961,40 @@ function drawStamp(ctx, W, H, info, label, layoutLandscape = null) {
   }
   ctx.restore();
 }
+function physicalCameraRotation(src) {
+  const w = window.innerWidth || 0, h = window.innerHeight || 0;
+  let angle = 0;
+  try {
+    if (typeof window.orientation === 'number' && Math.abs(window.orientation) === 90) {
+      angle = window.orientation;
+    } else if (screen.orientation && typeof screen.orientation.angle === 'number' &&
+               Math.abs(screen.orientation.angle) === 90) {
+      angle = screen.orientation.angle;
+    }
+  } catch (_) {}
+  // If the browser exposes the physical landscape angle but the camera frame
+  // remains portrait, rotate the pixels so the saved image is genuinely landscape.
+  if (Math.abs(angle) === 90 && src.height > src.width) return angle === 90 ? 90 : -90;
+  return 0;
+}
+
+function normalizePhotoOrientation(src, degrees) {
+  if (!degrees) return src;
+  const out = document.createElement('canvas');
+  out.width = src.height; out.height = src.width;
+  const c = out.getContext('2d');
+  if (degrees > 0) {
+    c.translate(out.width, 0); c.rotate(Math.PI / 2);
+  } else {
+    c.translate(0, out.height); c.rotate(-Math.PI / 2);
+  }
+  c.drawImage(src, 0, 0);
+  return out;
+}
+
 function openEditor(src, info, j) {
   const { si, id } = current;
+  if (info.rotationDegrees) src = normalizePhotoOrientation(src, info.rotationDegrees);
   const sc = Math.min(1, 2200 / Math.max(src.width, src.height));
   const W = Math.round(src.width * sc), H = Math.round(src.height * sc);
   const base = document.createElement('canvas');
@@ -989,7 +1021,7 @@ function openEditor(src, info, j) {
     ctx.drawImage(base, 0, 0);
     shapes.forEach((s, i) => drawShape(ctx, s, lw, i === selected));
     if (cur) drawShape(ctx, cur, lw, false);
-    drawStamp(ctx, W, H, info, label, info.layoutLandscape ?? null);
+    drawStamp(ctx, W, H, info, label);
   };
   render();
   const canvasMetrics = () => {
@@ -1184,8 +1216,8 @@ async function startLive(j) {
     const vv = window.visualViewport;
     const viewW = vv && vv.width ? vv.width : window.innerWidth;
     const viewH = vv && vv.height ? vv.height : window.innerHeight;
-    const landscapeScreen = viewW > viewH;
-    drawStamp(sctx, W, H, { now: new Date(), pos: geo.pos, addr }, label, landscapeScreen);
+    const frameLandscape = W >= H * 1.15;
+    drawStamp(sctx, W, H, { now: new Date(), pos: geo.pos, addr }, label, frameLandscape);
   };
   const repaintAfterRotation = () => {
     paintStamp();
@@ -1252,12 +1284,9 @@ async function startLive(j) {
     c.width = vid.videoWidth; c.height = vid.videoHeight;
     c.getContext('2d').drawImage(vid, 0, 0);
     const pos = geo.pos, addr = addrOf(pos && pos.coords);
-    const vv = window.visualViewport;
-    const viewW = vv && vv.width ? vv.width : window.innerWidth;
-    const viewH = vv && vv.height ? vv.height : window.innerHeight;
-    const layoutLandscape = viewW > viewH;
+    const rotationDegrees = physicalCameraRotation(c);
     close();
-    openEditor(c, { now, pos, addr, realtime: true, layoutLandscape }, j);
+    openEditor(c, { now, pos, addr, realtime: true, rotationDegrees }, j);
   };
 }
 
