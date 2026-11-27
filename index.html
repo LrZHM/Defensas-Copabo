@@ -197,10 +197,8 @@ body.reordering{overflow:hidden;touch-action:none}
 .export-help{margin:0 0 18px!important;line-height:1.4}
 .material-model{margin:8px 0 14px!important;line-height:1.35;overflow-wrap:anywhere}
 
-.photo-mode-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
-.photo-mode-actions .btn{min-width:0;white-space:normal;line-height:1.2;padding:12px 8px}
-@media(max-width:420px){.photo-mode-actions{grid-template-columns:1fr}}
- .cam-orientation-hint{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);z-index:2;background:rgba(0,0,0,.62);color:#fff;padding:8px 14px;border-radius:20px;font:600 13px system-ui;white-space:nowrap;pointer-events:none}
+.photo-actions{margin-top:8px}
+.photo-actions .btn{width:100%;min-width:0;white-space:normal;line-height:1.2;padding:12px 10px}
 </style>
 </head>
 <body>
@@ -665,8 +663,7 @@ function paintDef() {
         ${v.photos[j] ? `<img src="${v.photos[j]}" alt="${label}">` : `<div style="height:150px;display:grid;place-items:center;color:#71818c">Sem fotografia</div>`}
         <b>${label}</b>
         <input class="hidden" type="file" accept="image/*" capture="environment" id="photo${j}" data-photo="${j}">
-        <div class="photo-mode-actions">
-          <button class="btn secondary" data-a="take" data-mode="landscape" data-j="${j}">Foto horizontal</button>
+        <div class="photo-actions">
           <button class="btn secondary" data-a="take" data-mode="portrait" data-j="${j}">Foto vertical</button>
         </div>
         ${v.photos[j] ? `<button class="btn danger full" data-a="delphoto" data-j="${j}">Remover foto</button>` : ''}
@@ -982,7 +979,7 @@ function drawStamp(ctx, W, H, info, label, layoutLandscape = null) {
     const right = coords.map(t => [t, F(small), lineH]);
     const contentH = Math.max(left.reduce((n, r) => n + r[2], 0), middle.length * lineH, right.length * lineH);
     const bh = contentH + pd * 2, by = Math.max(margin, H - bh - margin);
-    ctx.fillStyle = 'rgba(0,0,0,.56)'; rr(bx, by, bw, bh, u * .55); ctx.fill(); ctx.fillStyle = '#fff';
+    ctx.fillStyle = '#fff';
     let yy = by + pd;
     left.forEach(([t, font, h]) => { ctx.font = font; ctx.fillText(t, x1, yy, leftW); yy += h; });
     yy = by + pd;
@@ -1003,7 +1000,7 @@ function drawStamp(ctx, W, H, info, label, layoutLandscape = null) {
     ];
     const contentH = rows.reduce((n, r) => n + r.lines.length * r.h, 0);
     const boxH = contentH + pd * 2, x = Math.round(u * .8), y = Math.max(u * .5, H - boxH - u * .8);
-    ctx.fillStyle = 'rgba(0,0,0,.56)'; rr(x, y, boxW, boxH, u * .55); ctx.fill(); ctx.fillStyle = '#fff';
+    ctx.fillStyle = '#fff';
     let cy = y + pd;
     rows.forEach(r => { ctx.font = r.font; r.lines.forEach(line => { ctx.fillText(line, x + pd, cy, inner); cy += r.h; }); });
   }
@@ -1053,7 +1050,7 @@ function openEditor(src, info, j) {
   const lw = Math.max(10, Math.round(Math.min(W, H) / 48));
   const box = document.createElement('div');
   box.id = 'ed';
-  box.innerHTML = `<div class="ed-top"><b>Editar foto</b> · arraste a caixa para mover · puxe os cantos para ampliar e o controle para girar · puxe as pontas da seta para mudar seu tamanho</div>
+  box.innerHTML = `<div class="ed-top"><b>Editar foto</b> · toque na seta ou círculo para ajustar tamanho e posição · arraste o texto para mover ou puxe os cantos</div>
     <canvas id="edC"></canvas>
     <div class="ed-tools">
       <button data-tool="arrow" class="on">➜ Seta</button><button data-tool="circle">◯ Círculo</button><button data-tool="pen">✎ Livre</button>
@@ -1066,8 +1063,79 @@ function openEditor(src, info, j) {
   cv.style.touchAction = 'none';
   cv.width = W; cv.height = H;
   let selected = -1, mode = null, lastX = 0, lastY = 0;
-  // A caixa de informações é uma camada independente: pode ser movida,
-  // ampliada/reduzida e girada sem deformar a fotografia.
+  const canvasMetrics = () => {
+    const r = cv.getBoundingClientRect(), scale = Math.min(r.width / W, r.height / H) || 1;
+    return { r, scale, left: r.left + (r.width - W * scale) / 2, top: r.top + (r.height - H * scale) / 2 };
+  };
+  const pt = e => { const m = canvasMetrics(); return [(e.clientX - m.left) / m.scale, (e.clientY - m.top) / m.scale]; };
+  const kpx = () => 1 / canvasMetrics().scale;
+  const tolFor = e => (e.pointerType === 'mouse' ? 18 : 42) * kpx();
+  const handleRadius = () => Math.max(16, lw * 1.15, 22 * kpx());
+  const shapeHandles = s => {
+    if (!s) return [];
+    if (s.k === 'circle') {
+      const r = Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+      return [
+        [s.x1 + r, s.y1],
+        [s.x1 - r, s.y1],
+        [s.x1, s.y1 - r],
+        [s.x1, s.y1 + r]
+      ];
+    }
+    if (s.k === 'arrow' || s.k === 'line') {
+      return [[s.x1, s.y1], [s.x2, s.y2]];
+    }
+    return [];
+  };
+  const drawShapeWithHandles = (s, isSel) => {
+    drawShape(ctx, s, lw, false);
+    if (!isSel || s.k === 'pen') return;
+    const hr = handleRadius();
+    if (s.k === 'circle') {
+      const r = Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+      ctx.save();
+      ctx.setLineDash([10, 7]);
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = Math.max(3, lw * 0.35);
+      ctx.beginPath();
+      ctx.arc(s.x1, s.y1, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.save();
+      ctx.setLineDash([10, 7]);
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = Math.max(3, lw * 0.35);
+      ctx.beginPath();
+      ctx.moveTo(s.x1, s.y1);
+      ctx.lineTo(s.x2, s.y2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    for (const [hx, hy] of shapeHandles(s)) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.fillStyle = '#00e5ff';
+      ctx.arc(hx, hy, hr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = Math.max(2.5, lw * 0.25);
+      ctx.strokeStyle = '#000';
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  const pickShapeHandle = (s, x, y, tp) => {
+    if (!s || s.k === 'pen') return null;
+    const hitR = Math.max(handleRadius() * 1.45, 44 * kpx(), tp * 1.25);
+    const hs = shapeHandles(s);
+    for (let i = 0; i < hs.length; i++) {
+      if (Math.hypot(x - hs[i][0], y - hs[i][1]) <= hitR) {
+        return s.k === 'circle' ? 'circleRadius' : (i === 0 ? 'h1' : 'h2');
+      }
+    }
+    return null;
+  };
+  // O carimbo de texto é uma camada independente sem caixa de fundo.
   const stampCanvas = document.createElement('canvas');
   stampCanvas.width = W; stampCanvas.height = H;
   const stampCtx = stampCanvas.getContext('2d');
@@ -1098,15 +1166,13 @@ function openEditor(src, info, j) {
   };
   const stampHit = (x,y) => {
     const [lx,ly] = stampLocal(x,y), hw=stampBox.w*stamp.scale/2, hh=stampBox.h*stamp.scale/2;
-    const handle = Math.max(34, 46 / Math.max(.25, canvasMetrics().scale));
-    // Qualquer um dos quatro cantos redimensiona a caixa pelo toque.
+    const handle = Math.max(38, 50 / Math.max(.25, canvasMetrics().scale));
     for (const [cx,cy] of [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]]) {
       if (Math.hypot(lx-cx,ly-cy) < handle) return 'stampScale';
     }
     return Math.abs(lx)<=hw && Math.abs(ly)<=hh ? 'stampMove' : null;
   };
   const drawStampLayer = (showHandles) => {
-    const c = Math.cos(stamp.rotation), sn = Math.sin(stamp.rotation);
     ctx.save();
     ctx.translate(stamp.x, stamp.y); ctx.rotate(stamp.rotation); ctx.scale(stamp.scale, stamp.scale);
     ctx.drawImage(stampCanvas, stampBox.x, stampBox.y, stampBox.w, stampBox.h,
@@ -1116,7 +1182,7 @@ function openEditor(src, info, j) {
       const pts = stampCorners();
       ctx.save(); ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = Math.max(3, lw*.28);
       ctx.setLineDash([9,6]); ctx.beginPath(); pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.closePath(); ctx.stroke();
-      ctx.setLineDash([]); pts.forEach(q=>{ctx.beginPath();ctx.fillStyle='#00e5ff';ctx.arc(q[0],q[1],Math.max(11,lw*.8),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.stroke();});
+      ctx.setLineDash([]); pts.forEach(q=>{ctx.beginPath();ctx.fillStyle='#00e5ff';ctx.arc(q[0],q[1],Math.max(12,lw*.85),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.stroke();});
       const topMid=[(pts[0][0]+pts[1][0])/2,(pts[0][1]+pts[1][1])/2];
       const nx=topMid[0] + Math.sin(stamp.rotation)*Math.max(58,lw*4),
             ny=topMid[1] - Math.cos(stamp.rotation)*Math.max(58,lw*4);
@@ -1128,19 +1194,12 @@ function openEditor(src, info, j) {
   };
   const render = (finalImage = false) => {
     ctx.clearRect(0,0,W,H); ctx.drawImage(base, 0, 0);
-    shapes.forEach((sh, i) => drawShape(ctx, sh, lw, i === selected));
+    shapes.forEach((sh, i) => drawShapeWithHandles(sh, !finalImage && i === selected));
     if (cur) drawShape(ctx, cur, lw, false);
     drawStampLayer(!finalImage && stampSelected);
   };
   render();
-  const canvasMetrics = () => {
-    const r = cv.getBoundingClientRect(), scale = Math.min(r.width / W, r.height / H);
-    return { r, scale, left: r.left + (r.width - W * scale) / 2, top: r.top + (r.height - H * scale) / 2 };
-  };
-  const pt = e => { const m = canvasMetrics(); return [(e.clientX - m.left) / m.scale, (e.clientY - m.top) / m.scale]; };
-  const kpx = () => 1 / canvasMetrics().scale;
-  const tolFor = e => (e.pointerType === 'mouse' ? 14 : 30) * kpx(); // área de toque generosa (em px de tela)
-  let activeId = null, startX = 0, startY = 0, lastRotAngle = 0, hadSel = false;
+  let activeId = null, startX = 0, startY = 0, stampStartDist = 1, lastRotAngle = 0;
   const activePointers = new Map();
   let pinchStartDistance = 0, pinchStartScale = 1, pinchActive = false;
   let pinchTarget = null, pinchShapeStart = null;
@@ -1184,44 +1243,63 @@ function openEditor(src, info, j) {
     activeId = e.pointerId;
     const [x, y] = pt(e), tp = tolFor(e);
     lastX = x; lastY = y; startX = x; startY = y;
-    let hit = -1, handle = null;
-    hadSel = selected >= 0;
-    const sh = stampHit(x,y);
+
+    // 1. Se já existe seta ou círculo selecionado, prioriza suas alças de redimensionamento ou o corpo da forma.
+    if (selected >= 0 && shapes[selected]) {
+      const shSel = shapes[selected];
+      const hdl = pickShapeHandle(shSel, x, y, tp);
+      if (hdl) {
+        stampSelected = false;
+        mode = hdl;
+        render();
+        return;
+      }
+      if (hitShape(shSel, x, y, lw, false, tp * 1.4)) {
+        stampSelected = false;
+        mode = 'move';
+        render();
+        return;
+      }
+    }
+
+    // 2. Verifica se tocou em alguma seta ou círculo existente.
+    for (let i = shapes.length - 1; i >= 0; i--) {
+      const shCand = shapes[i];
+      const hdl = pickShapeHandle(shCand, x, y, tp);
+      if (hdl) {
+        selected = i;
+        stampSelected = false;
+        mode = hdl;
+        render();
+        return;
+      }
+      if (hitShape(shCand, x, y, lw, false, tp * 1.25)) {
+        selected = i;
+        stampSelected = false;
+        mode = 'move';
+        render();
+        return;
+      }
+    }
+
+    // 3. Verifica alça de rotação ou texto da camada de informação (sem fundo).
     const rh = stamp.rotateHandle;
-    if (stampSelected && rh && Math.hypot(x-rh[0],y-rh[1]) < Math.max(42,tp*1.35)) {
+    if (stampSelected && rh && Math.hypot(x-rh[0],y-rh[1]) < Math.max(44,tp*1.35)) {
       mode='stampRotate'; lastRotAngle=Math.atan2(y-stamp.y,x-stamp.x); render(); return;
     }
-    if (sh) {
+    const shStamp = stampHit(x,y);
+    if (shStamp) {
       stampSelected=true;
-      mode=sh; lastX=x; lastY=y;
+      mode=shStamp; lastX=x; lastY=y;
       if (mode==='stampScale') stampStartDist=Math.max(1,Math.hypot(x-stamp.x,y-stamp.y));
       if (mode==='stampRotate') lastRotAngle=Math.atan2(y-stamp.y,x-stamp.x);
       selected=-1; render(); return;
     }
+
     stampSelected = false;
-    if (selected >= 0 && shapes[selected]) {
-      const h0 = hitShape(shapes[selected], x, y, lw, true, tp);
-      if (h0) { hit = selected; handle = h0; }
-      else if (hitShape(shapes[selected], x, y, lw, false, tp * 2.2)) { hit = selected; handle = true; } // quase acertou: mover a selecionada
-    }
-    if (hit < 0) {
-      for (let i = shapes.length - 1; i >= 0; i--) {
-        const h = hitShape(shapes[i], x, y, lw, false, tp);
-        if (h) { hit = i; handle = h; break; }
-      }
-    }
-    if (hit >= 0) {
-      selected = hit;
-      mode = handle === 'h1' ? 'h1' : handle === 'h2' ? 'h2' : handle === 'rot' ? 'rot' : 'move';
-      if (mode === 'rot') {
-        const a = shapes[selected], mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
-        lastRotAngle = Math.atan2(y - my, x - mx);
-      }
-      cur = null; render(); return;
-    }
     selected = -1;
     mode = 'draw';
-    cur = null;                                    // só cria a marca depois que o dedo realmente se arrastar
+    cur = null;
     render();
   });
   cv.addEventListener('pointermove', e => {
@@ -1236,8 +1314,6 @@ function openEditor(src, info, j) {
         clampStamp();
       } else if (pinchTarget === 'shape' && selected >= 0 && shapes[selected] && pinchShapeStart) {
         const original=pinchShapeStart, s=shapes[selected];
-        // Escala radial em torno do centro da marca: mantém a posição e amplia/reduz
-        // tanto o comprimento da seta quanto o raio do círculo.
         const cx=original.k === 'circle' ? original.x1 : (original.x1+original.x2)/2;
         const cy=original.k === 'circle' ? original.y1 : (original.y1+original.y2)/2;
         s.x1=cx+(original.x1-cx)*ratio;
@@ -1253,7 +1329,7 @@ function openEditor(src, info, j) {
     const [x, y] = pt(e);
     if (mode === 'draw') {
       if (!cur) {
-        if (Math.hypot(x - startX, y - startY) < 14 * kpx()) return;   // limiar de ~14 px de tela
+        if (Math.hypot(x - startX, y - startY) < 14 * kpx()) return;
         cur = tool === 'pen' ? { k: 'pen', c: color, pts: [[startX, startY]] } : { k: tool, c: color, x1: startX, y1: startY, x2: x, y2: y };
       }
       if (cur.k === 'pen') cur.pts.push([x, y]); else { cur.x2 = x; cur.y2 = y; }
@@ -1281,20 +1357,15 @@ function openEditor(src, info, j) {
       if (mode === 'move') {
         if (s.k === 'pen' && s.pts) s.pts.forEach(p => { p[0] += dx; p[1] += dy; });
         else { s.x1 += dx; s.y1 += dy; s.x2 += dx; s.y2 += dy; }
-      } else if (mode === 'h1') { s.x1 = x; s.y1 = y; }
-      else if (mode === 'h2') { s.x2 = x; s.y2 = y; }
-      else if (mode === 'rot') {
-        const mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2;
-        const nowAngle = Math.atan2(y - my, x - mx);
-        let delta = nowAngle - lastRotAngle;
-        while (delta > Math.PI) delta -= Math.PI * 2;
-        while (delta < -Math.PI) delta += Math.PI * 2;
-        const dx0 = s.x2 - mx, dy0 = s.y2 - my;
-        const c = Math.cos(delta), sn = Math.sin(delta);
-        const dx = dx0 * c - dy0 * sn, dy = dx0 * sn + dy0 * c;
-        s.x1 = mx - dx; s.y1 = my - dy;
-        s.x2 = mx + dx; s.y2 = my + dy;
-        lastRotAngle = nowAngle;
+      } else if (mode === 'h1') {
+        s.x1 = x; s.y1 = y;
+      } else if (mode === 'h2') {
+        s.x2 = x; s.y2 = y;
+      } else if (mode === 'circleRadius') {
+        const ang = Math.atan2(y - s.y1, x - s.x1);
+        const nr = Math.max(12, Math.hypot(x - s.x1, y - s.y1));
+        s.x2 = s.x1 + Math.cos(ang) * nr;
+        s.y2 = s.y1 + Math.sin(ang) * nr;
       }
       clampShape(s);
       lastX = x; lastY = y;
@@ -1335,8 +1406,9 @@ function openEditor(src, info, j) {
     const [x, y] = pt(e), tp = tolFor(e);
     let c = 'crosshair';
     if (selected >= 0 && shapes[selected]) {
-      const h = hitShape(shapes[selected], x, y, lw, true, tp);
-      c = h === 'rot' ? 'alias' : (h === 'h1' || h === 'h2') ? 'nwse-resize' : h ? 'move' : c;
+      const hdl = pickShapeHandle(shapes[selected], x, y, tp);
+      if (hdl) c = 'nwse-resize';
+      else if (hitShape(shapes[selected], x, y, lw, false, tp * 1.4)) c = 'move';
     }
     if (c === 'crosshair') for (let i = shapes.length - 1; i >= 0; i--) if (hitShape(shapes[i], x, y, lw, false, tp)) { c = 'move'; break; }
     cv.style.cursor = c;
@@ -1373,7 +1445,8 @@ function openEditor(src, info, j) {
 }
 
 async function startLive(j, photoMode = 'portrait') {
-  const wantedLandscape = photoMode === 'landscape';
+  photoMode = 'portrait';
+  const wantedLandscape = false;
   const fallback = () => {
     if (!window.isSecureContext && !startLive.warned) { startLive.warned = true; alert('Câmera ao vivo e GPS exigem página HTTPS. Vou abrir a câmera do sistema (sem GPS). Para o recurso completo, abra o app por um link https://.'); }
     const input = document.getElementById('photo' + j);
@@ -1536,15 +1609,13 @@ async function startLive(j, photoMode = 'portrait') {
 }
 
 async function photoCapture(j, file, photoMode = 'portrait') {
+  photoMode = 'portrait';
   if (!file) return;
   const pos = await new Promise(res => navigator.geolocation ? navigator.geolocation.getCurrentPosition(res, () => res(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }) : res(null));
   if (pos) await lookupAddr(pos.coords);
   const bmp = await createImageBitmap(file);
-  const wantedLandscape = photoMode === 'landscape';
-  if ((bmp.width > bmp.height) !== wantedLandscape) {
-    alert(wantedLandscape
-      ? 'Foto não permitida: selecione ou tire uma imagem horizontal.'
-      : 'Foto não permitida: selecione ou tire uma imagem vertical.');
+  if (bmp.width > bmp.height) {
+    alert('Foto não permitida: selecione ou tire uma imagem vertical.');
     if (bmp.close) bmp.close();
     return;
   }
@@ -2181,7 +2252,7 @@ app.addEventListener('click', async e => {
     location.href = 'mailto:lorenzo.marchetti@copaboinfra.com.br,lorenzo.hayama@gmail.com?subject=' +
       encodeURIComponent('Sugestão - Relatório de Defensas Copabo');
   }
-  if (a === 'take') startLive(+b.dataset.j, b.dataset.mode || 'portrait');
+  if (a === 'take') startLive(+b.dataset.j, 'portrait');
   if (a === 'delphoto') {
     current.v.photos[+b.dataset.j] = null;
     current.v.photoMeta[+b.dataset.j] = null;
