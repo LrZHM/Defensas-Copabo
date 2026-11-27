@@ -1465,7 +1465,7 @@ async function startLive(j, photoMode = 'portrait') {
   const box = document.createElement('div');
   box.id = 'cam';
   box.innerHTML = `<video playsinline muted autoplay></video><canvas id="camStamp" style="position:absolute;pointer-events:none"></canvas>
-    <div class="cam-orientation-hint">${wantedLandscape ? 'Mantenha o aparelho na horizontal' : 'Mantenha o aparelho na vertical'}</div>
+    <div class="cam-orientation-hint">Caixa de informações em tempo real ajustável</div>
     <div class="cam-bar"><button class="btn secondary" id="camX" style="min-width:96px">Cancelar</button><button id="camShot" aria-label="Capturar"></button><button class="btn secondary" id="camFlip" aria-label="Alternar câmera frontal/traseira" style="min-width:96px">⟲ Câmera</button></div>`;
   document.body.appendChild(box);
   if (screen.orientation && screen.orientation.lock) {
@@ -1504,9 +1504,7 @@ async function startLive(j, photoMode = 'portrait') {
     shotBtn.disabled = !ok || switching;
     shotBtn.style.opacity = ok ? '1' : '.35';
     const hint = box.querySelector('.cam-orientation-hint');
-    if (hint) hint.textContent = wantedLandscape
-      ? 'Modo paisagem (horizontal) — gire o aparelho de lado e toque no botão'
-      : (ok ? 'Posição vertical correta' : 'Gire o aparelho para a vertical para fotografar');
+    if (hint) hint.textContent = 'Caixa de informações em tempo real ajustável';
     return ok;
   };
   validateOrientation();
@@ -2737,7 +2735,7 @@ openDB().catch(() => { noDB = true; }).then(async () => {
 });
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  navigator.serviceWorker.register('./sw.js?v=35').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=36').then(reg => {
     try { reg.update(); } catch (_) {}
   }).catch(() => {});
 }
