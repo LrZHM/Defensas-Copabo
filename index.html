@@ -148,6 +148,7 @@ body.reordering{overflow:hidden;touch-action:none}
 #cam video{flex:1;min-height:0;width:100%;object-fit:contain;background:#000}
 .cam-info{position:absolute;left:10px;bottom:112px;max-width:82%;background:transparent;padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.35;pointer-events:none}
 .cam-info .t{display:block;font-size:30px;font-weight:800;line-height:1.1}
+.cam-orientation-hint{align-self:center;margin:0 auto 6px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.92);font-size:12px;font-weight:500;letter-spacing:.2px;text-align:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .cam-bar,.ed-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:#000}
 #camShot{width:70px;height:70px;border-radius:50%;border:5px solid #fff;background:#e5e5e5;padding:0}
 #camShot:active{background:#bbb}
@@ -359,7 +360,12 @@ function normalizeRecord(v) {
   if (!v) return blank();
   if (!v.partNotes) v.partNotes = {};
   if (!v.partQty) v.partQty = {};
-  if (!v.partStockQty) v.partStockQty = {};
+  if (!v.partStockQty || typeof v.partStockQty !== 'object' || Array.isArray(v.partStockQty)) v.partStockQty = {};
+  for (const k of Object.keys(v.partStockQty)) {
+    const val = String(v.partStockQty[k] ?? '').trim();
+    if (val === '' || !/^[0-9]{1,5}$/.test(val)) delete v.partStockQty[k];
+    else v.partStockQty[k] = val;
+  }
   if (!v.partColors) v.partColors = {};
   if (!Array.isArray(v.extraMaterials)) v.extraMaterials = [];
   if (!Array.isArray(v.removedParts)) v.removedParts = [];
@@ -664,8 +670,7 @@ function paintDef() {
         <b>${label}</b>
         <input class="hidden" type="file" accept="image/*" capture="environment" id="photo${j}" data-photo="${j}">
         <div class="photo-actions">
-          <button class="btn secondary" data-a="take" data-mode="portrait" data-j="${j}">Foto vertical</button>
-          <button class="btn secondary" data-a="take" data-mode="landscape" data-j="${j}">Foto horizontal</button>
+          <button class="btn secondary" data-a="choosephoto" data-j="${j}">Tirar foto</button>
         </div>
         ${v.photos[j] ? `<button class="btn danger full" data-a="delphoto" data-j="${j}">Remover foto</button>` : ''}
         ${v.photoMeta[j] ? `<small class="muted">${esc(v.photoMeta[j].date)} · ${esc(v.photoMeta[j].location)}</small>` : ''}
@@ -2089,7 +2094,8 @@ async function buildPrint(jobs) {
         const pn = v.partNotes[key] || v.partNotes[legacy];
         const note = pn ? ` — ${String(pn).slice(0, 70)}` : '';
         const q0 = (v.partQty && (v.partQty[key] ?? v.partQty[legacy]));
-        const stock0 = (v.partStockQty && (v.partStockQty[key] ?? v.partStockQty[legacy])) ?? (M[s[1]]?.i?.[m.idx]?.[0]);
+        const hasCustomStock = v.partStockQty && (key in v.partStockQty || legacy in v.partStockQty);
+        const stock0 = hasCustomStock ? (v.partStockQty[key] ?? v.partStockQty[legacy]) : '';
         const col = (v.partColors || {})[key] || (v.partColors || {})[legacy];
         return { desc: m.name, stock: (stock0 === undefined || stock0 === null || stock0 === '') ? '—' : String(stock0), q: (q0 === undefined || q0 === null || q0 === '') ? '—' : String(q0), res: status + note, bg: PCOL[col] || null };
       });
@@ -2267,6 +2273,30 @@ app.addEventListener('click', async e => {
     location.href = 'mailto:lorenzo.marchetti@copaboinfra.com.br,lorenzo.hayama@gmail.com?subject=' +
       encodeURIComponent('Sugestão - Relatório de Defensas Copabo');
   }
+  if (a === 'choosephoto') {
+    const j = +b.dataset.j;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-backdrop';
+    overlay.innerHTML = `<div class="modal" role="dialog" aria-modal="true" style="max-width:340px;text-align:center">
+      <h2 style="margin-top:0">Formato da foto</h2>
+      <p class="muted" style="margin-bottom:14px">Escolha como deseja capturar a fotografia:</p>
+      <div style="display:grid;gap:10px">
+        <button type="button" class="btn full" data-pick-mode="landscape">Horizontal</button>
+        <button type="button" class="btn secondary full" data-pick-mode="portrait">Vertical</button>
+        <button type="button" class="btn secondary full" id="cancelPickPhoto" style="margin-top:4px;opacity:.8">Cancelar</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#cancelPickPhoto').onclick = () => overlay.remove();
+    overlay.onclick = ev => { if (ev.target === overlay) overlay.remove(); };
+    overlay.querySelectorAll('[data-pick-mode]').forEach(btn => {
+      btn.onclick = () => {
+        const mode = btn.dataset.pickMode;
+        overlay.remove();
+        startLive(j, mode);
+      };
+    });
+  }
   if (a === 'take') startLive(+b.dataset.j, b.dataset.mode || 'portrait');
   if (a === 'delphoto') {
     current.v.photos[+b.dataset.j] = null;
@@ -2426,7 +2456,8 @@ app.addEventListener('focusout', async e => {
   const value = input.value.trim();
   if (value === '' || /^[0-9]{1,5}$/.test(value)) {
     current.v.partStockQty = current.v.partStockQty || {};
-    current.v.partStockQty[keyName] = value;
+    if (value === '') delete current.v.partStockQty[keyName];
+    else current.v.partStockQty[keyName] = value;
     await put('records', key(current.si, current.id), current.v);
   } else {
     input.value = current.v.partStockQty?.[keyName] ?? '';
@@ -2485,7 +2516,8 @@ app.addEventListener('input', async e => {
       e.target.value = current.v.partStockQty[e.target.dataset.stockqty] ?? '';
       return alert('Informe uma quantidade inteira válida.');
     }
-    current.v.partStockQty[e.target.dataset.stockqty] = value;
+    if (value === '') delete current.v.partStockQty[e.target.dataset.stockqty];
+    else current.v.partStockQty[e.target.dataset.stockqty] = value;
     await put('records', key(current.si, current.id), current.v);
   }
 });
@@ -2735,7 +2767,7 @@ openDB().catch(() => { noDB = true; }).then(async () => {
 });
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  navigator.serviceWorker.register('./sw.js?v=36').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=38').then(reg => {
     try { reg.update(); } catch (_) {}
   }).catch(() => {});
 }
