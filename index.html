@@ -417,8 +417,8 @@ async function sector(si) {
     `<div class="topline"><button class="btn secondary" data-a="start">‹ Setores</button><h2>${esc(D[si][0])}</h2></div>
     <div class="sec-actions">
       <button class="btn rename" data-a="rensec" data-si="${si}">Renomear setor</button>
-      <button class="btn danger" data-a="clearsec" data-si="${si}">🗑 Limpar informações do setor</button>
-      ${isCustom ? `<button class="btn danger" data-a="delsector" data-si="${si}">🗑 Excluir setor personalizado</button>` : ''}
+      <button class="btn danger" data-a="clearsec" data-si="${si}">Limpar informações do setor</button>
+      ${isCustom ? `<button class="btn danger" data-a="delsector" data-si="${si}">Excluir setor personalizado</button>` : ''}
     </div>
     <input id="q" type="search" placeholder="🔍 Pesquisar defensa…" autocomplete="off" style="margin:4px 0 8px">
     <p class="muted" style="margin:0 0 8px">Segure e arraste pelo ícone ☰ para reordenar.</p>
@@ -636,9 +636,6 @@ function paintDef() {
     <div class="card">
       <h2>Componentes / materiais</h2>
       <p class="muted material-model">${modelKey ? `Modelo: ${esc(modelKey)}` : 'Modelo não definido'}</p>
-      <div class="actions" style="margin:8px 0 10px">
-        <button type="button" class="btn secondary" data-a="rmmatsel">Remover materiais</button>
-      </div>
       <hr style="border:0;border-top:1px solid var(--line,#d7dde1);margin:10px 0">
       <label style="display:flex;gap:10px;align-items:center;cursor:pointer;margin:10px 0;color:var(--ink)">
         <input type="checkbox" id="noMaterialQty" ${v.noQuantity ? 'checked' : ''} style="width:18px;height:18px">
@@ -672,8 +669,9 @@ function paintDef() {
         </div>`;
         }).join('');
       })()}
-      <div class="actions" style="margin-top:10px">
+      <div class="actions material-actions" style="margin-top:10px">
         <button type="button" class="btn secondary" data-a="addmat">＋ Adicionar material</button>
+        <button type="button" class="btn secondary" data-a="rmmatsel">Remover materiais</button>
       </div>
     </div>
     <div class="card">
@@ -1181,20 +1179,29 @@ async function startLive(j) {
     sctx.clearRect(0, 0, W, H);
     const p = geo.pos && geo.pos.coords;
     const addr = p ? (addrOf(p) || (navigator.onLine ? 'Buscando endereço…' : 'Endereço indisponível (sem internet)')) : 'Aguardando GPS…';
-    drawStamp(sctx, W, H, { now: new Date(), pos: geo.pos, addr }, label);
+    const landscapeScreen = window.innerWidth > window.innerHeight;
+    drawStamp(sctx, W, H, { now: new Date(), pos: geo.pos, addr }, label, landscapeScreen);
+  };
+  const repaintAfterRotation = () => {
+    paintStamp();
+    requestAnimationFrame(() => requestAnimationFrame(paintStamp));
+    setTimeout(paintStamp, 220);
+    setTimeout(paintStamp, 500);
   };
   paintStamp();
   const iv = setInterval(paintStamp, 1000);
-  vid.addEventListener('resize', paintStamp);
-  vid.addEventListener('loadedmetadata', paintStamp);
-  window.addEventListener('orientationchange', paintStamp);
-  window.addEventListener('resize', paintStamp);
+  vid.addEventListener('resize', repaintAfterRotation);
+  vid.addEventListener('loadedmetadata', repaintAfterRotation);
+  window.addEventListener('orientationchange', repaintAfterRotation);
+  window.addEventListener('resize', repaintAfterRotation);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', repaintAfterRotation);
   let ro = null;
-  if (window.ResizeObserver) { ro = new ResizeObserver(paintStamp); ro.observe(vid); }
+  if (window.ResizeObserver) { ro = new ResizeObserver(repaintAfterRotation); ro.observe(vid); ro.observe(box); }
   startGeo(paintStamp);
   const close = () => {
     closed = true; clearInterval(iv);
-    window.removeEventListener('orientationchange', paintStamp); window.removeEventListener('resize', paintStamp);
+    window.removeEventListener('orientationchange', repaintAfterRotation); window.removeEventListener('resize', repaintAfterRotation);
+    if (window.visualViewport) window.visualViewport.removeEventListener('resize', repaintAfterRotation);
     if (ro) ro.disconnect();
     stream.getTracks().forEach(t => t.stop()); stopGeo(); box.remove();
   };
@@ -1981,27 +1988,8 @@ app.addEventListener('click', async e => {
 app.addEventListener('pointerdown', e => {
   if (e.target.closest('[data-stockqty], [data-editstock]')) e.stopPropagation();
 }, true);
-app.addEventListener('click', e => {
-  if (e.target.closest('[data-stockqty], [data-editstock]')) e.stopPropagation();
-}, true);
-
 app.addEventListener('change', async e => {
   const t = e.target;
-  if (t.dataset.stockqty !== undefined && current.v) {
-    const value = t.value.trim();
-    if (value === '' || /^[0-9]+$/.test(value)) {
-      current.v.partStockQty = current.v.partStockQty || {};
-      current.v.partStockQty[t.dataset.stockqty] = value;
-      await put('records', key(current.si, current.id), current.v);
-    } else {
-      t.value = current.v.partStockQty[t.dataset.stockqty] ?? '';
-      alert('Informe uma quantidade inteira válida.');
-    }
-    t.readOnly = true;
-    const wrap = t.closest('.stock-wrap'); wrap?.classList.remove('is-editing');
-    const pencil = wrap?.querySelector('[data-editstock]');
-    if (pencil) { pencil.textContent = '✎'; pencil.title = 'Editar quantidade fixa'; pencil.setAttribute('aria-label', 'Editar quantidade fixa'); }
-  }
   if (t.dataset.photo !== undefined) {
     photoCapture(+t.dataset.photo, t.files[0]);
     return;
@@ -2048,6 +2036,32 @@ app.addEventListener('change', async e => {
     current.v.noQuantity = !!t.checked;
     await put('records', key(current.si, current.id), current.v);
     paintDef();
+  }
+});
+
+app.addEventListener('focusout', async e => {
+  const input = e.target.closest('[data-stockqty]');
+  if (!input || input.readOnly || input.dataset.committing === '1' || !current.v) return;
+  input.dataset.committing = '1';
+  const keyName = input.dataset.stockqty;
+  const value = input.value.trim();
+  if (value === '' || /^[0-9]{1,5}$/.test(value)) {
+    current.v.partStockQty = current.v.partStockQty || {};
+    current.v.partStockQty[keyName] = value;
+    await put('records', key(current.si, current.id), current.v);
+  } else {
+    input.value = current.v.partStockQty?.[keyName] ?? '';
+    alert('Informe uma quantidade inteira válida.');
+  }
+  input.readOnly = true;
+  const wrap = input.closest('.stock-wrap');
+  wrap?.classList.remove('is-editing');
+  const pencil = wrap?.querySelector('[data-editstock]');
+  delete input.dataset.committing;
+  if (pencil) {
+    pencil.textContent = '✎';
+    pencil.title = 'Editar quantidade fixa';
+    pencil.setAttribute('aria-label', 'Editar quantidade fixa');
   }
 });
 
